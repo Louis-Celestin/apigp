@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model agent {
+  id                                                       Int              @id @default(autoincrement())
+  nom_agent                                                String           @db.VarChar(255)
+  prenom_agent                                             String           @db.VarChar(255)
+  email_pro_agent                                          String           @db.VarChar(255)
+  type_agent_id                                            Int
+  zone_commerciale_id                                      Int
+  zone_commerciale                                         zone_commerciale @relation(fields: [zone_commerciale_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D326E035A")
+  type_agent                                               type_agent       @relation(fields: [type_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9DF9EB56F7")
+  livraison_livraison_agent_saisielivraison_idToagent      livraison[]      @relation("livraison_agent_saisielivraison_idToagent")
+  livraison_livraison_agent_validateur_livraison_idToagent livraison[]      @relation("livraison_agent_validateur_livraison_idToagent")
+  users                                                    users?
+
+  @@index([zone_commerciale_id], map: "IDX_268B9C9D326E035A")
+  @@index([type_agent_id], map: "IDX_268B9C9DF9EB56F7")
+}
+
+model deploiement {
+  id                                        Int     @id @default(autoincrement())
+  numero_deploiement                        String  @db.VarChar(255)
+  type_paiement_deploiement                 String  @db.VarChar(255)
+  etat_chargeur_deploiement                 String  @db.VarChar(255)
+  etat_batterie_deploiement                 String  @db.VarChar(255)
+  etat_puce_deploiement                     String  @db.VarChar(255)
+  objet_deploiement                         String  @db.VarChar(255)
+  nom_complet_personne_presente_deploiement String  @db.VarChar(255)
+  fonction_personne_presente_deploiement    String  @db.VarChar(255)
+  telephone_personne_presente_deploiement   String  @db.VarChar(255)
+  email_personne_presente_deploiement       String? @db.VarChar(255)
+}
+
+model direction {
+  id                    Int    @id @default(autoincrement())
+  nom_court_direction   String @db.VarChar(255)
+  nom_complet_direction String @db.VarChar(255)
+}
+
+model doctrine_migration_versions {
+  version        String    @id
+  executed_at    DateTime? @db.DateTime(0)
+  execution_time Int?
+}
+
+model livraison {
+  id                                                   Int      @id @default(autoincrement())
+  agent_validateur_livraison_id                        Int?
+  agent_saisielivraison_id                             Int
+  numero_livraison                                     String   @db.VarChar(255)
+  date_livraison                                       DateTime @db.DateTime(0)
+  statut_livraison                                     String   @db.VarChar(255)
+  tpes                                                 String   @db.LongText
+  agent_livraison_agent_saisielivraison_idToagent      agent    @relation("livraison_agent_saisielivraison_idToagent", fields: [agent_saisielivraison_id], references: [id], onUpdate: Restrict, map: "FK_A60C9F1F4E5C379B")
+  agent_livraison_agent_validateur_livraison_idToagent agent?   @relation("livraison_agent_validateur_livraison_idToagent", fields: [agent_validateur_livraison_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_A60C9F1FB333652C")
+
+  @@index([agent_saisielivraison_id], map: "IDX_A60C9F1F4E5C379B")
+  @@index([agent_validateur_livraison_id], map: "IDX_A60C9F1FB333652C")
+}
+
+model messenger_messages {
+  id           BigInt    @id @default(autoincrement())
+  body         String    @db.LongText
+  headers      String    @db.LongText
+  queue_name   String    @db.VarChar(190)
+  created_at   DateTime  @db.DateTime(0)
+  available_at DateTime  @db.DateTime(0)
+  delivered_at DateTime? @db.DateTime(0)
+
+  @@index([delivered_at], map: "IDX_75EA56E016BA31DB")
+  @@index([available_at], map: "IDX_75EA56E0E3BD61CE")
+  @@index([queue_name], map: "IDX_75EA56E0FB7336F0")
+}
+
+model roles {
+  id       Int     @id @default(autoincrement())
+  nom_role String  @db.VarChar(255)
+  users    users[]
+}
+
+model tpe_livraison {
+  id               Int    @id @default(autoincrement())
+  sn_tpe_livraison String @db.VarChar(255)
+}
+
+model type_agent {
+  id              Int     @id @default(autoincrement())
+  desc_type_agent String  @db.VarChar(255)
+  agent           agent[]
+}
+
+model users {
+  id            Int    @id @default(autoincrement())
+  agent_user_id Int    @unique(map: "UNIQ_1483A5E9753DB13F")
+  username_user String @db.VarChar(255)
+  password_user String @db.VarChar(255)
+  role_user_id  Int
+  roles         roles  @relation(fields: [role_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E91BA3766E")
+  agent         agent  @relation(fields: [agent_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E9753DB13F")
+
+  @@index([role_user_id], map: "IDX_1483A5E91BA3766E")
+}
+
+model zone_commerciale {
+  id       Int     @id @default(autoincrement())
+  nom_zone String  @db.VarChar(255)
+  agent    agent[]
+}

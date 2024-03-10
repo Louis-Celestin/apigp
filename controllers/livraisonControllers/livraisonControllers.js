@@ -4,12 +4,11 @@ const prisma = new PrismaClient();
 const format = require("date-format");
 const cnx = require("../../services/getData/dbConnect");
 const cnx1 = require("../../services/getData/dbConnectlocal")
-const getTpe = require("../../services/getData/getTpes");
 const { sendWhatsapp } = require("../../services/getData/Whatsaap");
 
 const getAllLivraison = async (req, res, next) => {
   const livraisons = await prisma.livraison.findMany();
-  return res.status(200).json({ livraisons });
+  return res.status(200).json( livraisons );
 };
 
 const getOneLivraison = async (req, res, next) => {

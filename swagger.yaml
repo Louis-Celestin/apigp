@@ -1,0 +1,33 @@
+openapi : 3.0.0
+info :
+  title : "E-deployment TPE Green-Pay"
+  description : "Automate deployment of all TPE"
+  version : 1.0.1
+
+servers:
+  - url: http://127.0.0.1:5500/api
+    description: Main Route
+
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic  
+    BearerAuth:
+      type : http
+      scheme: Bearer    
+
+
+paths:
+  /allLivraison:
+    get:
+      summury : returns all of delivery information
+      responses : 
+        '200':
+          description : returns an object
+          content : 
+            application/json:
+              schema : 
+                type : object
+                
+

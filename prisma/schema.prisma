@@ -9,15 +9,19 @@ datasource db {
 
 model agent {
   id                                                       Int              @id @default(autoincrement())
+  type_agent_id                                            Int
+  zone_commerciale_id                                      Int
   nom_agent                                                String           @db.VarChar(255)
   prenom_agent                                             String           @db.VarChar(255)
   email_pro_agent                                          String           @db.VarChar(255)
-  type_agent_id                                            Int
-  zone_commerciale_id                                      Int
+  numero_telephone_agent                                   String           @db.VarChar(255)
   zone_commerciale                                         zone_commerciale @relation(fields: [zone_commerciale_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D326E035A")
   type_agent                                               type_agent       @relation(fields: [type_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9DF9EB56F7")
+  deploiement                                              deploiement[]
   livraison_livraison_agent_saisielivraison_idToagent      livraison[]      @relation("livraison_agent_saisielivraison_idToagent")
   livraison_livraison_agent_validateur_livraison_idToagent livraison[]      @relation("livraison_agent_validateur_livraison_idToagent")
+  routine                                                  routine[]
+  tpe_livraison                                            tpe_livraison[]
   users                                                    users?
 
   @@index([zone_commerciale_id], map: "IDX_268B9C9D326E035A")
@@ -25,17 +29,21 @@ model agent {
 }
 
 model deploiement {
-  id                                        Int     @id @default(autoincrement())
-  numero_deploiement                        String  @db.VarChar(255)
-  type_paiement_deploiement                 String  @db.VarChar(255)
-  etat_chargeur_deploiement                 String  @db.VarChar(255)
-  etat_batterie_deploiement                 String  @db.VarChar(255)
-  etat_puce_deploiement                     String  @db.VarChar(255)
-  objet_deploiement                         String  @db.VarChar(255)
-  nom_complet_personne_presente_deploiement String  @db.VarChar(255)
-  fonction_personne_presente_deploiement    String  @db.VarChar(255)
-  telephone_personne_presente_deploiement   String  @db.VarChar(255)
-  email_personne_presente_deploiement       String? @db.VarChar(255)
+  id                             Int             @id @default(autoincrement())
+  commercial_deploiement_id      Int
+  point_marchand                 String          @db.VarChar(255)
+  site_marchand                  String          @db.VarChar(255)
+  nom_responsable_marchand       String          @db.VarChar(255)
+  fonction_responsable_marchand  String          @db.VarChar(255)
+  telephone_responsable_marchand String          @db.VarChar(255)
+  email_responsable_marchand     String          @db.VarChar(255)
+  tpes                           String          @db.VarChar(255)
+  date_deploiement               DateTime        @db.DateTime(0)
+  numero_deloiement              String          @db.VarChar(255)
+  agent                          agent           @relation(fields: [commercial_deploiement_id], references: [id], onUpdate: Restrict, map: "FK_E332A2F915B08F6F")
+  tpe_livraison                  tpe_livraison[]
+
+  @@index([commercial_deploiement_id], map: "IDX_E332A2F915B08F6F")
 }
 
 model direction {
@@ -51,15 +59,17 @@ model doctrine_migration_versions {
 }
 
 model livraison {
-  id                                                   Int      @id @default(autoincrement())
-  agent_validateur_livraison_id                        Int?
+  id                                                   Int             @id @default(autoincrement())
   agent_saisielivraison_id                             Int
-  numero_livraison                                     String   @db.VarChar(255)
-  date_livraison                                       DateTime @db.DateTime(0)
-  statut_livraison                                     String   @db.VarChar(255)
-  tpes                                                 String   @db.LongText
-  agent_livraison_agent_saisielivraison_idToagent      agent    @relation("livraison_agent_saisielivraison_idToagent", fields: [agent_saisielivraison_id], references: [id], onUpdate: Restrict, map: "FK_A60C9F1F4E5C379B")
-  agent_livraison_agent_validateur_livraison_idToagent agent?   @relation("livraison_agent_validateur_livraison_idToagent", fields: [agent_validateur_livraison_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_A60C9F1FB333652C")
+  agent_validateur_livraison_id                        Int?
+  numerolivraison                                      String          @db.VarChar(255)
+  statu_livraison                                      String          @db.VarChar(255)
+  date_saisie_livraison                                DateTime        @db.DateTime(0)
+  datevalidationlivraison                              DateTime        @db.DateTime(0)
+  tpes                                                 String          @db.VarChar(255)
+  agent_livraison_agent_saisielivraison_idToagent      agent           @relation("livraison_agent_saisielivraison_idToagent", fields: [agent_saisielivraison_id], references: [id], onUpdate: Restrict, map: "FK_A60C9F1F4E5C379B")
+  agent_livraison_agent_validateur_livraison_idToagent agent?          @relation("livraison_agent_validateur_livraison_idToagent", fields: [agent_validateur_livraison_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_A60C9F1FB333652C")
+  tpe_livraison                                        tpe_livraison[]
 
   @@index([agent_saisielivraison_id], map: "IDX_A60C9F1F4E5C379B")
   @@index([agent_validateur_livraison_id], map: "IDX_A60C9F1FB333652C")
@@ -85,9 +95,63 @@ model roles {
   users    users[]
 }
 
+model routine {
+  id                            Int           @id @default(autoincrement())
+  commercial_routine_id         Int
+  numero_routine                String        @db.VarChar(255)
+  date_routine                  DateTime      @db.DateTime(0)
+  point_marchand_routine        String        @db.VarChar(255)
+  latitude_marchand_routine     String        @db.VarChar(255)
+  longitude_marchand_routine    String        @db.VarChar(255)
+  veille_concurentielle_routine String        @db.VarChar(255)
+  agent                         agent         @relation(fields: [commercial_routine_id], references: [id], onUpdate: Restrict, map: "FK_4BF6D8D6E8A127CF")
+  tpe_routine                   tpe_routine[]
+
+  @@index([commercial_routine_id], map: "IDX_4BF6D8D6E8A127CF")
+}
+
 model tpe_livraison {
-  id               Int    @id @default(autoincrement())
-  sn_tpe_livraison String @db.VarChar(255)
+  id                                 Int          @id @default(autoincrement())
+  agent_deploiement_tpe_livraison_id Int
+  livraison_id                       Int
+  nom_tpe_livraison                  String       @db.VarChar(255)
+  point_marchand_tpe_livraison       String       @db.VarChar(255)
+  sn_tpe_livraison                   String       @db.VarChar(255)
+  zone_gp_tpe_livraison              String       @db.VarChar(255)
+  orange_tpe_livraison               String?      @db.VarChar(255)
+  mtn_tpe_livraison                  String?      @db.VarChar(255)
+  moov_tpe_livraison                 String?      @db.VarChar(255)
+  ecobank_tpe_livraison              String?      @db.VarChar(255)
+  banque_tpe_livraison               String?      @db.VarChar(255)
+  statut_livraison_dcm_tpe_livraison String       @db.VarChar(255)
+  statut_deploiement_tpe_livraison   String       @db.VarChar(255)
+  date_deploiement_tpe_livraison     DateTime     @db.DateTime(0)
+  etat_chargeur_tpelivraison         String       @db.VarChar(255)
+  etat_batterie_tpelivraison         String       @db.VarChar(255)
+  etat_puce_tpelivraison             String       @db.VarChar(255)
+  deploiement_id                     Int?
+  deploiement                        deploiement? @relation(fields: [deploiement_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_78EABD6A88B20267")
+  livraison                          livraison    @relation(fields: [livraison_id], references: [id], onUpdate: Restrict, map: "FK_78EABD6A8E54FB25")
+  agent                              agent        @relation(fields: [agent_deploiement_tpe_livraison_id], references: [id], onUpdate: Restrict, map: "FK_78EABD6ABC7C8475")
+
+  @@index([deploiement_id], map: "IDX_78EABD6A88B20267")
+  @@index([livraison_id], map: "IDX_78EABD6A8E54FB25")
+  @@index([agent_deploiement_tpe_livraison_id], map: "IDX_78EABD6ABC7C8475")
+}
+
+model tpe_routine {
+  id                           Int     @id @default(autoincrement())
+  routine_id                   Int
+  id_terminal_tpe_routine      String  @db.VarChar(255)
+  etat_tpe_routine             String  @db.VarChar(255)
+  etat_chargeur_tpe_routine    String  @db.VarChar(255)
+  probleme_bancaire            String? @db.VarChar(255)
+  description_problemebancaire String? @db.VarChar(255)
+  probleme_mobile              String? @db.VarChar(255)
+  description_probleme_mobile  String? @db.VarChar(255)
+  routine                      routine @relation(fields: [routine_id], references: [id], onUpdate: Restrict, map: "FK_9F5D372CF27A94C7")
+
+  @@index([routine_id], map: "IDX_9F5D372CF27A94C7")
 }
 
 model type_agent {
@@ -99,9 +163,9 @@ model type_agent {
 model users {
   id            Int    @id @default(autoincrement())
   agent_user_id Int    @unique(map: "UNIQ_1483A5E9753DB13F")
+  role_user_id  Int
   username_user String @db.VarChar(255)
   password_user String @db.VarChar(255)
-  role_user_id  Int
   roles         roles  @relation(fields: [role_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E91BA3766E")
   agent         agent  @relation(fields: [agent_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E9753DB13F")
 

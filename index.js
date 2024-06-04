@@ -12,20 +12,21 @@ const swaggerDocument = YAML.parse(file)
 // ROUTES
 const usersRoutes = require('./routes/usersRoutes/usersRoutes')
 const livraisonRoutes = require("./routes/livraisonRoutes/livraisonRoutes")
+const deploiementRoutes = require("./routes/deploiementRoutes/deploiementRoutes")
+const routinesRoutes = require("./routes/routineRoutes/routinesRoutes")
 
 
 const app = express()
-
 app.use(express.json());
 app.use(express.urlencoded({
   extended: true
 }));
 
-// APPLICATION USING ROUTES
-
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/api',usersRoutes)
 app.use('/api',livraisonRoutes)
+app.use('/api',deploiementRoutes)
+app.use('/api',routinesRoutes)
 
 
 const normalizePort = val => {

@@ -33,8 +33,13 @@ const register = async (req, res, next) => {
 };
 
 const login = async (req, res, next) => {
+
+    console.log(req.body)
+
     const username = req.body.username;
     const password = req.body.password;
+
+    
 
     prisma.users
         .findMany({
@@ -53,11 +58,12 @@ const login = async (req, res, next) => {
 
                             if(isMatch){
                                 const token = Jwt.sign({iduser : user[0].id},"SECRETKEY", {expiresIn : "1h"})
-                                return res.status(400).json({
-                                    "message": "connexion reussie",
-                                    "user":user,
-                                    "token":token
-                                })
+                                user[0].password_user = undefined
+                                user[0].agent = undefined
+                                user[0].token = token
+                                return res.status(200).json(
+                                    user[0]
+                                )
                             }else{
                                 return res.status(400).json({message : "nom utilisateur ou mot de passe incorrect"})
                             }
@@ -68,5 +74,4 @@ const login = async (req, res, next) => {
                         return res.status(400).json({message : "nom utilisateur ou mot de passe incorrect"})
                     })
 };
-
 module.exports = { register, login };

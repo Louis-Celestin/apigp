@@ -36,7 +36,7 @@ const trouverPointsMarchandsProches = async (req,res) => {
         const pointsMarchandsProches = [];
 
         rows.forEach(pointMarchand => {
-            console.log(latitudeTelephone, longitudeTelephone, pointMarchand.LATITUDE, pointMarchand.LONGITUDE)
+            // console.log(latitudeTelephone, longitudeTelephone, pointMarchand.LATITUDE, pointMarchand.LONGITUDE)
             const distance = calculateDistance(latitudeTelephone, longitudeTelephone, pointMarchand.LATITUDE, pointMarchand.LONGITUDE);
             if (distance <= 5) { // Chercher les points marchands dans un rayon de 5 mètres
                 pointsMarchandsProches.push(pointMarchand);

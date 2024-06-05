@@ -117,18 +117,17 @@ const getRoutine = async(req,res)=>{
 }
 
 const getRoutineByCommercial = async(req,res)=>{
-
-    console.log(req.body)
-    const idCommercial = req.body.idCommercial
-
     prisma.agent.findUnique({
         where : {
-            id : Number(idCommercial)
+            id : Number(11)
         }
     }).then(agent=>{
         if(agent){
             prisma.routine.findMany({
-                where : {commercial_routine_id : Number(idCommercial)}
+                where : {commercial_routine_id : Number(11)},
+                include : {
+                    tpe_routine : true
+                }
             }).then(routine=>{
                 if(routine.length){
                     return res.status(200).json(routine)

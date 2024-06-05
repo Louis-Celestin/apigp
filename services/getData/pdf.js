@@ -1,37 +1,34 @@
-const PDFDocument = require('pdfkit');
 const fs = require('fs');
-const axios = require('axios'); // Si vous utilisez Axios pour les requêtes HTTP
-
-// URL de l'API
-const API_URL = 'URL_DE_VOTRE_API';
+const PDFDocument = require('pdfkit');
+const axios = require('axios');
 
 // Fonction pour récupérer les données depuis votre API
 async function fetchAPI() {
     try {
-        const response = await axios.get(API_URL);
-        return response.data; // Supposons que les données sont renvoyées sous forme de tableau d'objets
+        const response = await axios.post('https://apigp.onrender.com/api/getRoutineByCommercial');
+        return response.data;
     } catch (error) {
         console.error('Erreur lors de la récupération des données depuis l\'API:', error);
-        return []; // En cas d'erreur, retourne un tableau vide
+        return [];
     }
 }
 
-// Crée un nouveau document PDF
-const doc = new PDFDocument();
+// Créez un document PDF avec pdfkit
+async function generatePDF(data) {
+    // Créez un nouveau document PDF
+    const doc = new PDFDocument();
 
-// Pipe le PDF dans un fichier
-const outputStream = fs.createWriteStream('rapport_de_routine.pdf');
-doc.pipe(outputStream);
+    // Pipe le PDF dans un fichier
+    const outputStream = fs.createWriteStream('rapport_de_routine.pdf');
+    doc.pipe(outputStream);
 
-// Ajouter le logo en haut à gauche
-doc.image('chemin/vers/votre/logo.png', 50, 50, { width: 100 });
+    // Ajouter le logo en haut à gauche
+    // doc.image('chemin/vers/votre/logo.png', 50, 50, { width: 100 });
 
-// Ajoutez votre contenu au PDF ici
-doc.fontSize(25).text('RAPPORT DE ROUTINE', { align: 'center' });
-doc.moveDown();
+    // Ajoutez votre contenu au PDF ici
+    doc.fontSize(25).text('RAPPORT DE ROUTINE', { align: 'center' });
+    doc.moveDown();
 
-// Récupérez les données depuis votre API
-fetchAPI().then(data => {
     // Insérez les données dynamiques dans le PDF
     data.forEach(routine => {
         doc.fontSize(12).font('Helvetica').text(`Date de la visite : ${new Date(routine.date_routine).toLocaleDateString()}`);
@@ -46,15 +43,14 @@ fetchAPI().then(data => {
         doc.moveDown();
 
         // Tableau des TPES
-        routine.tpe_routine.forEach((tpe, index) => {
-            doc.fontSize(12).font('Helvetica').text(`TPE ${index + 1}:`);
-            doc.fontSize(12).font('Helvetica').text(`ID Terminal : ${tpe.id_terminal_tpe_routine}`);
-            doc.fontSize(12).font('Helvetica').text(`Etat du TPE : ${tpe.etat_tpe_routine}`);
-            doc.fontSize(12).font('Helvetica').text(`Etat du chargeur : ${tpe.etat_chargeur_tpe_routine}`);
-            doc.fontSize(12).font('Helvetica').text(`Problème bancaire : ${tpe.probleme_bancaire}`);
-            doc.fontSize(12).font('Helvetica').text(`Description du problème bancaire : ${tpe.description_problemebancaire}`);
-            doc.fontSize(12).font('Helvetica').text(`Problème mobile : ${tpe.probleme_mobile}`);
-            doc.fontSize(12).font('Helvetica').text(`Description du problème mobile : ${tpe.description_probleme_mobile}`);
+        routine.tpe_routine.forEach(tpe => {
+            doc.text(`ID Terminal : ${tpe.id_terminal_tpe_routine}`);
+            doc.text(`Etat du TPE : ${tpe.etat_tpe_routine}`);
+            doc.text(`Etat du chargeur : ${tpe.etat_chargeur_tpe_routine}`);
+            doc.text(`Problème bancaire : ${tpe.probleme_bancaire}`);
+            doc.text(`Description du problème bancaire : ${tpe.description_problemebancaire}`);
+            doc.text(`Problème mobile : ${tpe.probleme_mobile}`);
+            doc.text(`Description du problème mobile : ${tpe.description_probleme_mobile}`);
             doc.moveDown();
         });
 
@@ -65,7 +61,9 @@ fetchAPI().then(data => {
     doc.end();
     
     console.log('PDF créé avec succès');
-}).catch(error => {
-    console.error('Erreur lors de la récupération des données depuis l\'API:', error);
-    doc.end();
-});
+}
+
+// Récupérez les données depuis votre API et générez le PDF
+fetchAPI()
+    .then(data => generatePDF(data))
+    .catch(error => console.error('Erreur lors de la récupération des données depuis l\'API:', error));

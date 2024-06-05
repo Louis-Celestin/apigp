@@ -14,6 +14,7 @@ const usersRoutes = require('./routes/usersRoutes/usersRoutes')
 const livraisonRoutes = require("./routes/livraisonRoutes/livraisonRoutes")
 const deploiementRoutes = require("./routes/deploiementRoutes/deploiementRoutes")
 const routinesRoutes = require("./routes/routineRoutes/routinesRoutes")
+const pmRoutes = require("./routes/pmRoutes/pmRoutes")
 
 
 const app = express()
@@ -27,6 +28,7 @@ app.use('/api',usersRoutes)
 app.use('/api',livraisonRoutes)
 app.use('/api',deploiementRoutes)
 app.use('/api',routinesRoutes)
+app.use('/api',pmRoutes)
 
 
 const normalizePort = val => {

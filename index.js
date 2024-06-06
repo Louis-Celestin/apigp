@@ -28,7 +28,7 @@ app.use('/api',usersRoutes)
 app.use('/api',livraisonRoutes)
 app.use('/api',deploiementRoutes)
 app.use('/api',routinesRoutes)
-app.use('/api',pmRoutes)
+app.use('/api',pmRoutes) 
 
 
 const normalizePort = val => {

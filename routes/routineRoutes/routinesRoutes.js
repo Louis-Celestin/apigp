@@ -7,6 +7,5 @@ const middlewares = require("../../middlewares/routinesMiddlewares/routinesMiddl
 router.post("/makeRoutine",[],controllers.makeRoutine)
 router.get("/routines",[],controllers.getRoutine)
 router.post("/getRoutineByCommercial",[],controllers.getRoutineByCommercial)
-// router.post("/gepmbylocation",[],controllers.getpm)
 
 module.exports=router

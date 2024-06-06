@@ -4,5 +4,4 @@ const controllers = require('../../controllers/pointmarchandContollers/pmControl
 
 
 router.post("/getpm",[],controllers.trouverPointsMarchandsProches)
-
 module.exports=router

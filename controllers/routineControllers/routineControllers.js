@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 const format = require("date-format");
 const cnx1 = require("../../services/getData/dbConnect")
 const {calculateDistance} = require("../../services/getData/calculeDistance")
-const mysql = require('mysql2/promise');
+// const mysql = require('mysql2/promise');
 
 const makeRoutine = async (req, res) => {
     try {
@@ -148,39 +148,40 @@ const getRoutineByCommercial = async(req,res)=>{
 }
 
 // Fonction pour récupérer les points marchands dans un rayon de 5 mètres autour de la position du téléphone
-const getpm  = async (req,res)=> {
-    const connection = await mysql.createConnection({
-        host: '51.210.248.205',
-        user: 'powerbi',
-        password: 'powerbi',
-        database: 'powerbi_gp'
-    });
+// const getpm  = async (req,res)=> {
 
-    try {
-        const [rows, fields] = await connection.execute(`
-            SELECT POINT_MARCHAND, LATITUDE, LONGITUDE
-            FROM POINT_MARCHAND WHERE POINT_MARCHAND.GROUPE <> 'SOFTPOS';
-        `);
+//     const connection = await mysql.createConnection({
+//         host: '51.210.248.205',
+//         user: 'powerbi',
+//         password: 'powerbi',
+//         database: 'powerbi_gp'
+//     });
 
-        const pointsMarchandsProches = [];
+//     try {
+//         const [rows, fields] = await connection.execute(`
+//             SELECT POINT_MARCHAND, LATITUDE, LONGITUDE, GROUPE
+//             FROM POINT_MARCHAND WHERE GROUPE != 'SOFTPOS';
+//         `);
 
-        rows.forEach(pointMarchand => {
+//         const pointsMarchandsProches = [];
+
+//         rows.forEach(pointMarchand => {
             
-            const distance = calculateDistance(req.body.latitudeTelephone, req.body.longitudeTelephone, pointMarchand.LATITUDE, pointMarchand.LONGITUDE);
-            if (distance <= 5) { // Chercher les points marchands dans un rayon de 5 mètres
-                pointsMarchandsProches.push(pointMarchand);
-            }
-        });
+//             const distance = calculateDistance(req.body.latitudeTelephone, req.body.longitudeTelephone, pointMarchand.LATITUDE, pointMarchand.LONGITUDE);
+//             if (distance <= 5) { // Chercher les points marchands dans un rayon de 5 mètres
+//                 pointsMarchandsProches.push(pointMarchand);
+//             }
+//         });
 
-        console.log(pointsMarchandsProches);
-    } catch (error) {
-        console.error('Erreur lors de la récupération des points marchands :', error);
-        throw error;
-    } finally {
-        await connection.end();
-    }
-}
+//         console.log(pointsMarchandsProches);
+//     } catch (error) {
+//         console.error('Erreur lors de la récupération des points marchands :', error);
+//         throw error;
+//     } finally {
+//         await connection.end();
+//     }
+// }
 
-module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getpm};
+module.exports = { makeRoutine , getRoutine, getRoutineByCommercial};
 
 

@@ -29,8 +29,8 @@ const trouverPointsMarchandsProches = async (req,res) => {
 
     try {
         const [rows, fields] = await connection.execute(`
-            SELECT POINT_MARCHAND, LATITUDE, LONGITUDE
-            FROM POINT_MARCHAND;
+            SELECT POINT_MARCHAND, LATITUDE, LONGITUDE, GROUPE
+            FROM POINT_MARCHAND WHERE GROUPE != 'SOFTPOS';
         `);
 
         const pointsMarchandsProches = [];
@@ -43,7 +43,11 @@ const trouverPointsMarchandsProches = async (req,res) => {
             }
         });
 
-        return res.status(200).json(pointsMarchandsProches);
+        if (pointsMarchandsProches.length === 0) {
+            return res.status(404).json({ message: 'Aucun point marchand trouvé dans un rayon de 5 mètres' });
+        }else{
+            return res.status(200).json(pointsMarchandsProches);
+        }
     } catch (error) {
         console.error('Erreur lors de la récupération des points marchands :', error);
         throw error;

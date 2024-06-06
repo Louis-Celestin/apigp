@@ -159,7 +159,7 @@ const getpm  = async (req,res)=> {
     try {
         const [rows, fields] = await connection.execute(`
             SELECT POINT_MARCHAND, LATITUDE, LONGITUDE
-            FROM POINT_MARCHAND;
+            FROM POINT_MARCHAND WHERE POINT_MARCHAND.GROUPE <> 'SOFTPOS';
         `);
 
         const pointsMarchandsProches = [];

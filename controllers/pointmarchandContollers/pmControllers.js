@@ -20,6 +20,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 // Fonction pour récupérer les points marchands dans un rayon de 5 mètres autour de la position du téléphone
 const trouverPointsMarchandsProches = async (req,res) => {
     const { latitudeTelephone, longitudeTelephone } = req.body;
+    
     const connection = await mysql.createConnection({
         host: '51.210.248.205',
         user: 'powerbi',
@@ -27,10 +28,12 @@ const trouverPointsMarchandsProches = async (req,res) => {
         database: 'powerbi_gp'
     });
 
+    console.log(latitudeTelephone, longitudeTelephone)
+
     try {
         const [rows, fields] = await connection.execute(`
             SELECT POINT_MARCHAND, LATITUDE, LONGITUDE, GROUPE
-            FROM POINT_MARCHAND WHERE GROUPE != 'SOFTPOS';
+            FROM POINT_MARCHAND WHERE GROUPE != 'SOFTPOS' AND ZONE_GP != 'SOFTPOS';
         `);
 
         const pointsMarchandsProches = [];
@@ -38,7 +41,7 @@ const trouverPointsMarchandsProches = async (req,res) => {
         rows.forEach(pointMarchand => {
             // console.log(latitudeTelephone, longitudeTelephone, pointMarchand.LATITUDE, pointMarchand.LONGITUDE)
             const distance = calculateDistance(latitudeTelephone, longitudeTelephone, pointMarchand.LATITUDE, pointMarchand.LONGITUDE);
-            if (distance <= 5) { // Chercher les points marchands dans un rayon de 5 mètres
+            if (distance <= 10) { // Chercher les points marchands dans un rayon de 5 mètres
                 pointsMarchandsProches.push(pointMarchand);
             }
         });

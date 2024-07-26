@@ -34,13 +34,14 @@ model agent {
 }
 
 model bdm {
-  id          Int       @id @default(autoincrement())
-  nom_bdm     String    @db.VarChar(255)
-  prenom_bdm  String    @db.VarChar(255)
-  email_bdm   String    @db.VarChar(255)
-  contact_bdm String    @db.VarChar(255)
-  agent       agent[]
-  routing     routing[]
+  id           Int       @id @default(autoincrement())
+  nom_bdm      String    @db.VarChar(255)
+  prenom_bdm   String    @db.VarChar(255)
+  email_bdm    String    @db.VarChar(255)
+  contact_bdm  String    @db.VarChar(255)
+  agent_bdm_id Int
+  agent        agent[]
+  routing      routing[]
 }
 
 model deploiement {

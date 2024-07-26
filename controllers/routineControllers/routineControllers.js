@@ -525,7 +525,7 @@ const getAllRoutingsByBdm = async(req,res)=>{
     
 
   await  prisma.bdm.findMany({
-        where : {id : Number(bdmId)}
+        where : {agent_bdm_id : Number(bdmId)}
     }).then(bdm=>{
         if(bdm.length){
             prisma.routing.findMany({
@@ -555,7 +555,7 @@ const getMyAgents = async(req,res)=>{
     const bdmId = req.body.bdmId
 
     prisma.bdm.findMany({
-        where : { id : Number(bdmId)}
+        where : {agent_bdm_id : Number(bdmId)}
     }).then(bdm=>{
         if(bdm.length){
             prisma.agent.findMany({

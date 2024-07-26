@@ -1,0 +1,1 @@
+DATABASE_URL="mysql://devgp_root:P@sswordAa2024@mysql-devgp.alwaysdata.net:3306/devgp_deploiement?schema=public"

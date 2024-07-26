@@ -11,21 +11,36 @@ model agent {
   id                                                       Int              @id @default(autoincrement())
   type_agent_id                                            Int
   zone_commerciale_id                                      Int
+  responsable_agent_id                                     Int
   nom_agent                                                String           @db.VarChar(255)
   prenom_agent                                             String           @db.VarChar(255)
   email_pro_agent                                          String           @db.VarChar(255)
   numero_telephone_agent                                   String           @db.VarChar(255)
+  code_authorisation_agent                                 String?          @db.VarChar(255)
+  bdm                                                      bdm              @relation(fields: [responsable_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D10BC1D11")
   zone_commerciale                                         zone_commerciale @relation(fields: [zone_commerciale_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D326E035A")
   type_agent                                               type_agent       @relation(fields: [type_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9DF9EB56F7")
   deploiement                                              deploiement[]
   livraison_livraison_agent_saisielivraison_idToagent      livraison[]      @relation("livraison_agent_saisielivraison_idToagent")
   livraison_livraison_agent_validateur_livraison_idToagent livraison[]      @relation("livraison_agent_validateur_livraison_idToagent")
   routine                                                  routine[]
+  routing                                                  routing[]
   tpe_livraison                                            tpe_livraison[]
   users                                                    users?
 
+  @@index([responsable_agent_id], map: "IDX_268B9C9D10BC1D11")
   @@index([zone_commerciale_id], map: "IDX_268B9C9D326E035A")
   @@index([type_agent_id], map: "IDX_268B9C9DF9EB56F7")
+}
+
+model bdm {
+  id          Int       @id @default(autoincrement())
+  nom_bdm     String    @db.VarChar(255)
+  prenom_bdm  String    @db.VarChar(255)
+  email_bdm   String    @db.VarChar(255)
+  contact_bdm String    @db.VarChar(255)
+  agent       agent[]
+  routing     routing[]
 }
 
 model deploiement {
@@ -104,10 +119,30 @@ model routine {
   latitude_marchand_routine     String        @db.VarChar(255)
   longitude_marchand_routine    String        @db.VarChar(255)
   veille_concurentielle_routine String        @db.VarChar(255)
+  routing_id                    Int
+  commentaire_routine           String        @db.VarChar(255)
+  routing                       routing       @relation(fields: [routing_id], references: [id], onUpdate: Restrict, map: "FK_4BF6D8D658735C4C")
   agent                         agent         @relation(fields: [commercial_routine_id], references: [id], onUpdate: Restrict, map: "FK_4BF6D8D6E8A127CF")
   tpe_routine                   tpe_routine[]
 
+  @@index([routing_id], map: "IDX_4BF6D8D658735C4C")
   @@index([commercial_routine_id], map: "IDX_4BF6D8D6E8A127CF")
+}
+
+model routing {
+  id                  Int       @id @default(autoincrement())
+  agent_routing_id    Int
+  bdm_routing_id      Int
+  description_routing String    @db.VarChar(255)
+  date_debut_routing  DateTime  @db.DateTime(0)
+  date_fin_routing    DateTime  @db.DateTime(0)
+  pm_routing          String    @db.LongText
+  routine             routine[]
+  agent               agent     @relation(fields: [agent_routing_id], references: [id], onUpdate: Restrict, map: "FK_A5F8B9FA29358D43")
+  bdm                 bdm       @relation(fields: [bdm_routing_id], references: [id], onUpdate: Restrict, map: "FK_A5F8B9FA9400F2B5")
+
+  @@index([agent_routing_id], map: "IDX_A5F8B9FA29358D43")
+  @@index([bdm_routing_id], map: "IDX_A5F8B9FA9400F2B5")
 }
 
 model tpe_livraison {
@@ -149,6 +184,8 @@ model tpe_routine {
   description_problemebancaire String? @db.VarChar(255)
   probleme_mobile              String? @db.VarChar(255)
   description_probleme_mobile  String? @db.VarChar(255)
+  commenttaire_tpe_routine     String  @db.VarChar(255)
+  image_tpe_routine            String  @db.VarChar(255)
   routine                      routine @relation(fields: [routine_id], references: [id], onUpdate: Restrict, map: "FK_9F5D372CF27A94C7")
 
   @@index([routine_id], map: "IDX_9F5D372CF27A94C7")

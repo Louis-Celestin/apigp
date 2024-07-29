@@ -33,45 +33,119 @@ const register = async (req, res, next) => {
 };
 
 const login = async (req, res, next) => {
+  try {
+    console.log(req.body);
 
-    console.log(req.body)
+    const { username, password } = req.body;
+    let bdmId;
 
-    const username = req.body.username;
-    const password = req.body.password;
+    // Trouver l'utilisateur avec l'agent associé
+    const users = await prisma.users.findMany({
+      include: {
+        agent: true,
+      },
+      where: {
+        username_user: username,
+      },
+    });
 
-    
+    if (users.length === 0) {
+      return res.status(400).json({ message: "Nom d'utilisateur ou mot de passe incorrect" });
+    }
 
-    prisma.users
-        .findMany({
-            include: {
-                agent: true
-            },
-            where: {
-                username_user: username,
-            },
-        })
-        .then((user) => {
-            if (user.length) {
-                bcrypt
-                    .compare(
-                        password, user[0].password_user, (err,isMatch)=>{
+    const user = users[0];
+    const isMatch = await bcrypt.compare(password, user.password_user);
 
-                            if(isMatch){
-                                const token = Jwt.sign({iduser : user[0].id},"SECRETKEY", {expiresIn : "1h"})
-                                user[0].password_user = undefined
-                                user[0].agent = undefined
-                                user[0].token = token
-                                return res.status(200).json(
-                                    user[0]
-                                )
-                            }else{
-                                return res.status(400).json({message : "nom utilisateur ou mot de passe incorrect"})
-                            }
-                        }
-                    )
+    if (!isMatch) {
+      return res.status(400).json({ message: "Nom d'utilisateur ou mot de passe incorrect" });
+    }
 
-                    }}).catch(err=>{
-                        return res.status(400).json({message : "nom utilisateur ou mot de passe incorrect"})
-                    })
+    // Trouver le BDM associé à l'agent
+    if (user.agent) {
+      const bdm = await prisma.bdm.findMany({
+        where: { agent_bdm_id: Number(user.agent_user_id) },
+        select: { id: true },
+      });
+
+      if (bdm.length) {
+        bdmId = bdm[0].id;
+        // console.log(bdm);
+      } else {
+        console.log("PAS DE DONNEES");
+      }
+    }
+
+    // Créer un token JWT
+    const token = Jwt.sign({ iduser: user.id }, "SECRETKEY", { expiresIn: "1h" });
+    user.password_user = undefined;
+    user.agent = undefined;
+    user.token = token;
+
+    // Inclure globalVariable dans la réponse
+    return res.status(200).json({
+      user,
+      bdmId
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ message: "Erreur lors de la connexion" });
+  }
 };
+
+
+// const login = async (req, res, next) => {
+//     try {
+//       console.log(req.body);
+  
+//       const { username, password } = req.body;
+  
+//       // Trouver l'utilisateur avec l'agent associé
+//       const users = await prisma.users.findMany({
+//         include: {
+//           agent: true,
+//         },
+//         where: {
+//           username_user: username,
+//         },
+//       });
+  
+//       if (users.length === 0) {
+//         return res.status(400).json({ message: "Nom d'utilisateur ou mot de passe incorrect" });
+//       }
+  
+//       const user = users[0];
+  
+//       // Comparer le mot de passe
+//       const isMatch = await bcrypt.compare(password, user.password_user);
+  
+//       if (!isMatch) {
+//         return res.status(400).json({ message: "Nom d'utilisateur ou mot de passe incorrect" });
+//       }
+  
+//       // Créer un token JWT
+//       const token = Jwt.sign({ iduser: user.id }, "SECRETKEY", { expiresIn: "1h" });
+//       user.password_user = undefined;
+//       user.agent = undefined;
+  
+//       // Trouver le BDM associé à l'agent
+//       if (user.agent) {
+//         const bdm = await prisma.bdm.findUnique({
+//           where: { agent_bdm_id: user.agent.id },
+//         });
+//         console.log(bdm)
+//       }
+  
+//       user.token = token;
+  
+//       return res.status(200).json(user);
+  
+//     } catch (err) {
+//       console.error(err);
+//       return res.status(400).json({ message: "Erreur lors de la connexion" });
+//     }
+//   };
+
+
+
+  
 module.exports = { register, login };

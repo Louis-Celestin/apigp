@@ -597,7 +597,7 @@ const getAllRoutinesByBdm = (req, res) => {
     }
 
     cnx2.conn.query(`
-        SELECT nom_agent,prenom_agent,point_marchand_routine,date_routine,veille_concurentielle_routine,commentaire_routine,id_terminal_tpe_routine,etat_tpe_routine,etat_chargeur_tpe_routine,probleme_bancaire,description_problemebancaire,probleme_mobile,description_probleme_mobile,commenttaire_tpe_routine,image_tpe_routine FROM routine INNER JOIN routing ON routine.routing_id = routing.id JOIN bdm JOIN tpe_routine ON tpe_routine.routine_id = routing.id JOIN agent ON agent.id =routine.commercial_routine_id WHERE bdm.id =?`, 
+        SELECT nom_agent,prenom_agent,point_marchand_routine,date_routine,veille_concurentielle_routine,commentaire_routine,id_terminal_tpe_routine,etat_tpe_routine,etat_chargeur_tpe_routine,probleme_bancaire,description_problemebancaire,probleme_mobile,description_probleme_mobile,commenttaire_tpe_routine,image_tpe_routine FROM routine INNER JOIN routing ON routine.routing_id = routing.id JOIN bdm JOIN tpe_routine ON tpe_routine.routine_id = routing.id JOIN agent ON agent.id =routine.commercial_routine_id WHERE bdm.agent_bdm_id =?`, 
         [bdmId], 
         (error, rows) => {
             if (error) {
@@ -613,11 +613,6 @@ const getAllRoutinesByBdm = (req, res) => {
         }
     );
 };
-
-module.exports = { getAllRoutinesByBdm };
-
-
-
 
 
 module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm};

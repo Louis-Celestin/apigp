@@ -4,7 +4,8 @@ const conn = mysql.createConnection({
     port : "3306",
     database : "devgp_deploiement",
     password : "P@sswordAa2024",
-    user : "devgp_root"
+    user : "devgp_root",
+    timeout : 10000
 })
 
 conn.connect()

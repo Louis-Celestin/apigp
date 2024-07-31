@@ -4,7 +4,8 @@ const conn = mysql.createConnection({
     port : "3306",
     database : "powerbi_gp",
     password : "powerbi",
-    user : "powerbi"
+    user : "powerbi",
+    timeout : 10000
 })
 
 conn.connect()

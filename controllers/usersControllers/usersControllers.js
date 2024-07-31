@@ -69,7 +69,6 @@ const login = async (req, res, next) => {
 
       if (bdm.length) {
         bdmId = bdm[0].id;
-        // console.log(bdm);
       } else {
         console.log("PAS DE DONNEES");
       }
@@ -91,6 +90,7 @@ const login = async (req, res, next) => {
     return res.status(400).json({ message: "Erreur lors de la connexion" });
   }
 };
+
 
 
 // const login = async (req, res, next) => {
@@ -143,9 +143,5 @@ const login = async (req, res, next) => {
 //       console.error(err);
 //       return res.status(400).json({ message: "Erreur lors de la connexion" });
 //     }
-//   };
-
-
-
-  
+//   };  
 module.exports = { register, login };

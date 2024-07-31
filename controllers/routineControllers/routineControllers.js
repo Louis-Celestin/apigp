@@ -537,6 +537,8 @@ const getAllRoutingsByBdm = async(req,res)=>{
             }).then(routing=>{
                 if(routing.length){
                     return res.status(200).json(routing)
+                }else{
+                    return res.status(400).json({message : "Vous n'avez aucun routing"})
                 }
             }).catch(err=>{
                 console.log(err)

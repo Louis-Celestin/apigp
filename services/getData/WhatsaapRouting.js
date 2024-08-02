@@ -45,10 +45,10 @@ const sendWhatsappRouting = async (number, mobileCoach, pms, resposable) => {
     let config = {
         method: 'post',
         maxBodyLength: Infinity,
-        url: 'https://graph.facebook.com/v19.0/236506329550149/messages',
+        url: 'https://graph.facebook.com/v20.0/236506329550149/messages',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer EAAZAn2JABS9cBOzOLFozMBDq3Ls6qfi8WDh2olxi8NQZBNtNw7XZAuczhSAxDm9C1Ef3kMqEhQn9Y518YolAghPxuEPqntYWVSUrRquYyUJtRXeAVoowCZBZBcInZCCcujbAHD8jfBamVUtVYIOUBlaro506aQPJYGiowfDC6wp0ZB8tbcxhAUamZBSPArUaVY8sNNtNrLE9ZB5L4CyCloRQZD', // Remplacez par votre token d'autorisation
+            'Authorization': 'Bearer EAAZAn2JABS9cBO5G71ApZA3TyfGmrnhTqHheRoALuqaztSq7NB899GkCYkkb9DDvAAHcOgAZAqSWZBxZBL35LsoM85ZBAO8Vl21WZAfE8lqnPHaHTZAG9yZCGcXBlHP4ctJdLyU9925j3xfZAsopmvh0ry7OJozKx4huMGLVI6LMQEmAILzpU4gCiLVqwk9M3ETDHWs0QdmJRBaPVDdEo9vpUZD', // Remplacez par votre token d'autorisation
             'Cookie': 'ps_l=0; ps_n=0'
         },
         data: data

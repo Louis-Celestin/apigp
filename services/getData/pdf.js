@@ -10,6 +10,7 @@ const axios = require('axios');
  * @param {Object} responsable - Les informations sur le responsable (nom, email).
  */
 const generateAndSendPDF = async (routineData, agent, responsable) => {
+  console.log(routineData)
   const createPDF = (data, callback) => {
     const doc = new PDFDocument({ margin: 50 });
     const filePath = `C:/Users/louis/Bd/Apis/services/getData/PDF/agent_${new Date().getTime()}_output.pdf`;
@@ -65,7 +66,7 @@ const generateAndSendPDF = async (routineData, agent, responsable) => {
         from: 'louiskoye@outlook.fr',
         to: responsable.email_bdm,
         subject: 'Rapport de Routine',
-        text: `Bonjour ${responsable.nom_bdm} ${responsable.prenom_agent},,\n\nVotre agent ${agent.nom_agent} vient d'effectuer une routine chez le point marchand ${data[0].pointMarchand}.\n\nCi-joint le rapport de routine.\n\nCordialement.`,
+        text: `Bonjour ${responsable.nom_bdm} ${responsable.prenom_agent},\n\nVotre agent ${agent.nom_agent} vient d'effectuer une routine chez le point marchand ${data[0].pointMarchand}.\n\nCi-joint le rapport de routine.\n\nCordialement.`,
         attachments: [
           {
             filename: 'rapport_routine.pdf',
@@ -110,7 +111,7 @@ const generateAndSendPDF = async (routineData, agent, responsable) => {
       doc.fontSize(16).font('Helvetica-Bold').text('TPE Routine', { underline: true, align: 'left' });
       doc.moveDown();
 
-      routineData.tpeList.forEach(async (tpe, tpeIndex) => {
+      routineData.tpe_routine.forEach(async (tpe, tpeIndex) => {
         doc.fontSize(14).font('Helvetica-Bold').text(`TPE ${tpeIndex + 1}`, { underline: true });
         doc.moveDown();
 

@@ -5,7 +5,7 @@ const conn = mysql.createConnection({
     database : "devgp_deploiement",
     password : "P@sswordAa2024",
     user : "devgp_root",
-    timeout : 10000
+    timeout : 30000
 })
 
 conn.connect()

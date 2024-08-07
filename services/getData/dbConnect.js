@@ -5,7 +5,7 @@ const conn = mysql.createConnection({
     database : "powerbi_gp",
     password : "powerbi",
     user : "powerbi",
-    timeout : 10000
+    timeout : 30000
 })
 
 conn.connect()

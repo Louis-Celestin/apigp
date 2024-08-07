@@ -953,7 +953,93 @@ const getAllRoutinesByBdm = (req, res) => {
     );
 };
 
+const getAllMerchants = async(req,res)=>{
+    const SOFTPOS = "SOFTPOS";
 
-module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm};
+    cnx1.conn.query("SELECT POINT_MARCHAND FROM POINT_MARCHAND WHERE POINT_MARCHAND.GROUPE <> ?", [SOFTPOS], (error, results, fields) => {
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des PM" });
+        }
+
+        if (!results.length) {
+            return res.status(400).json({ message: "Aucun PM trouvé" });
+        }
+
+        return res.status(200).json(results);
+    });
+}
+
+
+
+// const updateMerchant = async(req,res)=>{
+
+//     const latitude = req.body.latitude
+//     const longitude = req.body.longitude
+//     const pointMarchand = req.body.pm
+
+//     if(!latitude||!longitude||!pointMarchand){
+
+//         return res.status(400).json({message :"Tous les champs sont disponibles"})
+//     }else{
+//         cnx1.conn.query("UPDATE POINT_MARCHAND SET POINT_MARCHAND.LATITUDE = ? , POINT_MARCHAND.LONGITUDE = ? WHERE POINT_MARCHAND.POINT_MARCHAND = ?", [latitude],[longitude],[pointMarchand], (error,results,fields)=>{
+//             if(error){
+//                 console.log(error)
+//                 return res.status(400).json(error)
+//             }
+
+//             if (!results.length) {
+//                 return res.status(400).json({ message: "Aucun PM trouvé" });
+//             }
+    
+//             return res.status(200).json(results);
+//     })
+//     }
+
+
+
+
+// }
+
+const updateMerchant = async (req, res) => {
+    const { latitude, longitude, pm } = req.body;
+    console.log(latitude,longitude,pm)
+
+    if (!latitude || !longitude || !pm) {
+        return res.status(400).json({ message: "Tous les champs sont requis" });
+    }else{
+
+        const checkPm = await prisma.pm.findMany({where:{
+            nom_pm : pm
+        }})
+        if(checkPm.length==0){
+            prisma.pm.create({
+                data : {
+                    nom_pm : pm,
+                    latitude_pm: latitude.toString(),
+                    longitude_pm : longitude.toString()
+                }
+            }).then((pm)=>{
+                if(pm){
+                    return res.status(200).json({message : "le message a bien été enregistré"})
+                }else{
+                    return res.status(400).json({message : "Erreur lors de la création du point marchand"})
+                }
+            }).catch(err=>{
+                console.log(err)
+            })
+        }else{
+            console.log("NON OK")
+            return res.status(400).json({message : "Ce point Marchand existe déja dans la Base"})
+        }
+
+    }
+
+
+    
+};
+
+
+module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm, getAllMerchants, updateMerchant};
 
 

@@ -17,9 +17,10 @@ model agent {
   email_pro_agent                                          String           @db.VarChar(255)
   numero_telephone_agent                                   String           @db.VarChar(255)
   code_authorisation_agent                                 String?          @db.VarChar(255)
-  bdm                                                      bdm              @relation(fields: [responsable_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D10BC1D11")
+  bdm_agent_responsable_agent_idTobdm                      bdm              @relation("agent_responsable_agent_idTobdm", fields: [responsable_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D10BC1D11")
   zone_commerciale                                         zone_commerciale @relation(fields: [zone_commerciale_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D326E035A")
   type_agent                                               type_agent       @relation(fields: [type_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9DF9EB56F7")
+  bdm_bdm_agent_bdm_idToagent                              bdm?             @relation("bdm_agent_bdm_idToagent")
   deploiement                                              deploiement[]
   livraison_livraison_agent_saisielivraison_idToagent      livraison[]      @relation("livraison_agent_saisielivraison_idToagent")
   livraison_livraison_agent_validateur_livraison_idToagent livraison[]      @relation("livraison_agent_validateur_livraison_idToagent")
@@ -34,14 +35,15 @@ model agent {
 }
 
 model bdm {
-  id           Int       @id @default(autoincrement())
-  nom_bdm      String    @db.VarChar(255)
-  prenom_bdm   String    @db.VarChar(255)
-  email_bdm    String    @db.VarChar(255)
-  contact_bdm  String    @db.VarChar(255)
-  agent_bdm_id Int
-  agent        agent[]
-  routing      routing[]
+  id                                    Int       @id @default(autoincrement())
+  nom_bdm                               String    @db.VarChar(255)
+  prenom_bdm                            String    @db.VarChar(255)
+  email_bdm                             String    @db.VarChar(255)
+  contact_bdm                           String    @db.VarChar(255)
+  agent_bdm_id                          Int       @unique(map: "UNIQ_8680751A96E7BAA5")
+  agent_agent_responsable_agent_idTobdm agent[]   @relation("agent_responsable_agent_idTobdm")
+  agent_bdm_agent_bdm_idToagent         agent     @relation("bdm_agent_bdm_idToagent", fields: [agent_bdm_id], references: [id], onUpdate: Restrict, map: "FK_8680751A96E7BAA5")
+  routing                               routing[]
 }
 
 model deploiement {
@@ -105,6 +107,13 @@ model messenger_messages {
   @@index([queue_name], map: "IDX_75EA56E0FB7336F0")
 }
 
+model pm {
+  id           Int    @id @default(autoincrement())
+  nom_pm       String @db.VarChar(255)
+  latitude_pm  String @db.VarChar(255)
+  longitude_pm String @db.VarChar(255)
+}
+
 model roles {
   id       Int     @id @default(autoincrement())
   nom_role String  @db.VarChar(255)
@@ -130,6 +139,7 @@ model routine {
   @@index([commercial_routine_id], map: "IDX_4BF6D8D6E8A127CF")
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model routing {
   id                  Int       @id @default(autoincrement())
   agent_routing_id    Int

@@ -53,7 +53,7 @@ const makeRoutine = async (req, res) => {
         // console.log(routing)
         const pointMarchandQuery = `%${pointMarchand}%`;
         const results = await new Promise((resolve, reject) => {
-            cnx1.conn.query("SELECT * FROM pm WHERE nom_pm LIKE ?", [pointMarchandQuery], (error, results) => {
+            cnx3.conn.query("SELECT * FROM pm WHERE nom_pm LIKE ?", [pointMarchandQuery], (error, results) => {
                 if (error) return reject(error);
                 resolve(results);
             });

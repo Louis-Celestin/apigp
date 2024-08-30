@@ -461,8 +461,8 @@ const getMyAgents = async(req,res)=>{
     }).catch(err=>console.log(err))
 }
 
-const getPms = (req, res) => {
-    cnx1.conn.query("SELECT * FROM POINT_MARCHAND", (error, results) => {
+const getPms =async (req, res) => {
+   await cnx1.conn.query("SELECT * FROM POINT_MARCHAND", (error, results) => {
         if (error) {
             console.error("Erreur lors de la récupération des points marchands:", error);
             return res.status(500).json({ message: "Erreur serveur" });

@@ -19,5 +19,6 @@ router.get("/getPms",[],controllers.getPms)
 router.post("/getAllRoutinesByBdm",[],controllers.getAllRoutinesByBdm)
 router.get("/getAllMerchants",[],controllers.getAllMerchants)
 router.post("/updateMerchant",[],controllers.updateMerchant)
+router.post("/profile",[],controllers.getProfile)
 
 module.exports=router

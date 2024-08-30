@@ -567,10 +567,11 @@ const getProfile = async (req,res)=>{
         )
     }else{
         const agent = await prisma.agent.findMany({where:{id : Number(agentId)}})
+        return res.status(200).json(agent)
     }
 }
 
 
-module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm, getAllMerchants, updateMerchant};
+module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm, getAllMerchants, getProfile,updateMerchant};
 
 

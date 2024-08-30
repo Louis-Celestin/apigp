@@ -505,7 +505,7 @@ const getAllRoutinesByBdm = (req, res) => {
 const getAllMerchants = async(req,res)=>{
     const SOFTPOS = "SOFTPOS";
 
-    cnx1.conn.query("SELECT POINT_MARCHAND FROM POINT_MARCHAND WHERE POINT_MARCHAND.GROUPE <> ?", [SOFTPOS], (error, results, fields) => {
+   await cnx1.conn.query("SELECT POINT_MARCHAND FROM POINT_MARCHAND WHERE POINT_MARCHAND.GROUPE <> ?", [SOFTPOS], (error, results, fields) => {
         if (error) {
             console.log(error);
             return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des PM" });

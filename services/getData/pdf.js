@@ -11,6 +11,8 @@ const axios = require('axios');
  */
 const generateAndSendPDF = async (routineData, agent, responsable) => {
   console.log(routineData)
+  console.log(agent)
+  console.log(responsable)
   const createPDF = (data, callback) => {
     const doc = new PDFDocument({ margin: 50 });
     const filePath = `C:/Users/louis/Bd/Apis/services/getData/PDF/agent_${new Date().getTime()}_output.pdf`;

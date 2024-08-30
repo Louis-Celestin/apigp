@@ -22,41 +22,45 @@ const trouverPointsMarchandsProches = async (req,res) => {
     const { latitudeTelephone, longitudeTelephone } = req.body;
     
     const connection = await mysql.createConnection({
-        host: '51.210.248.205',
-        user: 'powerbi',
-        password: 'powerbi',
-        database: 'powerbi_gp'
+        // host: '51.210.248.205',
+        // user: 'powerbi',
+        // password: 'powerbi',
+        // database: 'powerbi_gp'
+        host : "mysql-devgp.alwaysdata.net",
+        user : "devgp_root",
+        database : "devgp_deploiement",
+        password : "P@sswordAa2024",
     });
 
     console.log(latitudeTelephone, longitudeTelephone)
 
     try {
-        const [rows, fields] = await connection.execute(`
-            SELECT POINT_MARCHAND, LATITUDE, LONGITUDE, GROUPE
-            FROM POINT_MARCHAND WHERE GROUPE != 'SOFTPOS' AND ZONE_GP != 'SOFTPOS';
+        const [rows] = await connection.execute(`
+            SELECT * FROM pm;
         `);
-
+    
         const pointsMarchandsProches = [];
-
+    
         rows.forEach(pointMarchand => {
-            // console.log(latitudeTelephone, longitudeTelephone, pointMarchand.LATITUDE, pointMarchand.LONGITUDE)
-            const distance = calculateDistance(latitudeTelephone, longitudeTelephone, pointMarchand.LATITUDE, pointMarchand.LONGITUDE);
-            if (distance <= 10) { // Chercher les points marchands dans un rayon de 5 mètres
+            const distance = calculateDistance(latitudeTelephone, longitudeTelephone, pointMarchand.latitude_pm, pointMarchand.longitude_pm);
+            if (distance <= 5) { // Chercher les points marchands dans un rayon de 5 mètres
                 pointsMarchandsProches.push(pointMarchand);
             }
         });
-
+    
         if (pointsMarchandsProches.length === 0) {
             return res.status(404).json({ message: 'Aucun point marchand trouvé dans un rayon de 5 mètres' });
-        }else{
+        } else {
+            console.log(pointsMarchandsProches)
             return res.status(200).json(pointsMarchandsProches);
         }
     } catch (error) {
         console.error('Erreur lors de la récupération des points marchands :', error);
-        throw error;
+        res.status(500).json({ message: 'Erreur interne du serveur' });
     } finally {
         await connection.end();
     }
+    
 }
 
 module.exports = { trouverPointsMarchandsProches };

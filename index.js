@@ -7,8 +7,6 @@ const YAML = require('yaml')
 const file  = fs.readFileSync('./swagger.yaml', 'utf8')
 const swaggerDocument = YAML.parse(file)
 
-
-
 // ROUTES
 const usersRoutes = require('./routes/usersRoutes/usersRoutes')
 const livraisonRoutes = require("./routes/livraisonRoutes/livraisonRoutes")

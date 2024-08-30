@@ -4,6 +4,7 @@ const prisma = new PrismaClient();
 const format = require("date-format");
 const cnx1 = require("../../services/getData/dbConnect")
 const cnx2 = require("../../services/getData/dbConnectlocal")
+const cnx3 = require("../../services/getData/dbConnectForNewDb")
 const {calculateDistance} = require("../../services/getData/calculeDistance");
 const { generateAndSendPDF } = require("../../services/getData/pdf");
 const cloudinary = require('cloudinary').v2;
@@ -15,469 +16,18 @@ const writeFile = promisify(fs.writeFile);
 const unlink = promisify(fs.unlink);
 
 
-// const mysql = require('mysql2/promise');
-
-// const makeRoutine = async (req, res) => {
-//     console.log(req.body)
-//     // console.log(req.body)
-//     try {
-//         // console.log(req.body)
-//         // Récupération des données de la requête
-//         const { commercialId, pointMarchand, veilleConcurrentielle, tpeList, latitudeReel,longitudeReel,routing_id, commentaire_routine  } = req.body;
-//         // console.log(pointMarchand);
-        
-//         // Recherche de l'agent commercial
-//         const agent = await prisma.agent.findUnique({
-//             where: { id: Number(commercialId) },
-//             include: { zone_commerciale: true, bdm : true }
-//         });
-//         const routing = await prisma.routing.findUnique({
-//             where : {id : Number(routing_id)}
-//         })
-        
-//         if (!agent) {
-//             return res.status(400).json({ message: "Cet agent n'existe pas dans la base" });
-//         }
-
-//         if(!routing){
-//             return res.status(400).json({message: "ce routing n'existe pas dans la base"})
-//         }
-
-//         // Vérification du point marchand
-//         const pointMarchandQuery = `%${pointMarchand}%`;
-//         cnx1.conn.query("SELECT * FROM POINT_MARCHAND WHERE POINT_MARCHAND LIKE ?", [pointMarchandQuery], (error, results, fields) => {
-//             if (error) {
-//                 console.log(error);
-//                 return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche du point marchand" });
-//             }
-
-//             if (!results.length) {
-//                 return res.status(400).json({ message: "Ce point marchand n'existe pas" });
-//             }
-
-//             if (results[0].ZONE_GP !== agent.zone_commerciale.nom_zone) {
-//                 console.log(results[0].ZONE_GP,agent.zone_commerciale.nom_zone)
-//                 // return res.status(400).json({ message: "Vous n'avez pas le droit de visite" });
-//                 if(agent.code_authorisation_agent == null){
-//                     return res.status(403).json({ message: "Vous n'avez pas le droit de visite" });
-//                 }else if(agent.code_authorisation_agent == req.code){
-//                     // console.log("OK")
-//                 console.log(latitudeReel,longitudeReel,Number(results[0].LATITUDE), Number(results[0].LONGITUDE))
-//                 const distance = calculateDistance(latitudeReel,longitudeReel,Number(results[0].LATITUDE), Number(results[0].LONGITUDE))
-//                 // console.log(distance)
-//                 if(distance > 2){
-//                     return res.status(400).json({message : "Vous devez être chez le point marchand pour effectuer la visite"})
-//                 }else{
-//                     prisma.routine.create({
-//                         data: {
-//                             date_routine: format.now(),
-//                             veille_concurentielle_routine: veilleConcurrentielle,
-//                             point_marchand_routine: pointMarchand,
-//                             commercial_routine_id: commercialId,
-//                             numero_routine: "ROUTINE-" + uuid.v4().toUpperCase(),
-//                             latitude_marchand_routine: results[0].LATITUDE,
-//                             longitude_marchand_routine: results[0].LONGITUDE,
-//                             routing_id : routing_id,
-//                             commentaire_routine : commentaire_routine
-//                             // Complétez les champs de routine selon les données de la requête
-//                         }
-//                     }).then(routine => {
-//                         // Enregistrement des TPE associés à cette routine
-//                         const tpePromises = tpeList.map(async (tpe) => {
-//                             const { etatChargeur, etatTpe, problemeBancaire, problemeMobile, idTerminal,descriptionProblemeMobile,descriptionProblemeBancaire, commenttaire_tpe_routine, image_tpe_routine } = tpe;
-//                             let imageUrl = await convertImageToBase64(image_tpe_routine,process.env.CLOUDNAME,process.env.API_KEY,process.env.API_SECRET)
-//                             const newTpe = await prisma.tpe_routine.create({
-//                                 data: {
-//                                     etat_chargeur_tpe_routine: etatChargeur,
-//                                     etat_tpe_routine: etatTpe,
-//                                     probleme_mobile: problemeMobile,
-//                                     description_probleme_mobile: descriptionProblemeMobile,
-//                                     probleme_bancaire: problemeBancaire,
-//                                     description_problemebancaire: descriptionProblemeBancaire,
-//                                     id_terminal_tpe_routine: idTerminal,
-//                                     routine_id: routine.id,
-//                                     commenttaire_tpe_routine : commenttaire_tpe_routine,
-//                                     image_tpe_routine : imageUrl
-//                                      // Associez le TPE à la routine créée
-//                                 }
-//                             });
-//                             return newTpe;
-//                         });
-//                         Promise.all(tpePromises).then((tpeResults) => {
-//                             if (!tpeResults || tpeResults.some((tpe) => !tpe)) {
-//                                 console.log("Erreur lors de l'enregistrement des TPE");
-//                                 return res.status(500).json({ message: "Erreur lors de l'enregistrement des TPE" });
-//                             }
-//                             const agentpdf = {};
-//                             const responsable = agent.bdm
-//                             routine.tpe_routine = tpeResults;
-//                             agentpdf.nom = agent.nom_agent;
-//                             agentpdf.email = agent.email_pro_agent;
-//                             // console.log(agentpdf)
-//                             const tb = [routine]
-//                             console.log(tb)
-//                             generateAndSendPDF(tb, agent.nom_agent, responsable ).then(() => {
-//                                 return res.status(200).json({ message: "Votre visite a bien été enregistrée" });
-//                             }).catch((error) => {
-//                                 console.log(error);
-//                                 return res.status(500).json({ message: "Une erreur s'est produite lors de l'enregistrement des TPE" });
-//                             });
-//                         }).catch((error) => {
-//                             console.log(error);
-//                             return res.status(500).json({ message: "Une erreur s'est produite lors de l'enregistrement des TPE" });
-//                         });
-//                     }).catch((error) => {
-//                         console.log(error);
-//                         return res.status(500).json({ message: "Une erreur s'est produite lors de la création de la routine" });
-//                     });
-//                 }
-//                 }
-//             }
-//             // Création de la routine
-//         });
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json({ message: "Une erreur s'est produite lors de l'enregistrement de la visite" });
-//     }
-// };
-
-// const makeRoutine = async (req, res) => {
-//     console.log(req.body)
-
-//     try {
-//         const { commercialId, pointMarchand, veilleConcurrentielle, tpeList, latitudeReel, longitudeReel, routing_id, commentaire_routine } = req.body;
-        
-//         const agent = await prisma.agent.findUnique({
-//             where: { id: Number(commercialId) },
-//             include: { zone_commerciale: true, bdm: true }
-//         });
-
-//         const routing = await prisma.routing.findUnique({
-//             where: { id: Number(routing_id) }
-//         });
-
-//         if (!agent) {
-//             return res.status(400).json({ message: "Cet agent n'existe pas dans la base" });
-//         }
-
-//         if (!routing) {
-//             return res.status(400).json({ message: "Ce routing n'existe pas dans la base" });
-//         }else if(routing_id==0){
-
-//         const pointMarchandQuery = `%${pointMarchand}%`;
-//         cnx1.conn.query("SELECT * FROM POINT_MARCHAND WHERE POINT_MARCHAND LIKE ?", [pointMarchandQuery], async (error, results, fields) => {
-//             if (error) {
-//                 console.log(error);
-//                 return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche du point marchand" });
-//             }
-
-//             if (!results.length) {
-//                 return res.status(400).json({ message: "Ce point marchand n'existe pas" });
-//             }
-//         // console.log(routing)
-
-//                 const distance = calculateDistance(latitudeReel, longitudeReel, Number(results[0].LATITUDE), Number(results[0].LONGITUDE));
-//                 if (distance > 10) {
-//                     console.log("la distance est de: "+distance)
-//                     return res.status(401).json({ message: "Vous devez être chez le point marchand pour effectuer la visite" });
-//                 }
-//                 let valRoutingId
-
-//                 if(routing_id == ""){
-//                     valRoutingId = 0
-//                 }else{
-//                     valRoutingId = routing.id
-//                 }
-
-//                 const routine = await prisma.routine.create({
-//                     data: {
-//                         date_routine: format.now(),
-//                         veille_concurentielle_routine: veilleConcurrentielle,
-//                         point_marchand_routine: pointMarchand,
-//                         commercial_routine_id: commercialId,
-//                         numero_routine: `ROUTINE-${uuid.v4().toUpperCase()}`,
-//                         latitude_marchand_routine: results[0].LATITUDE,
-//                         longitude_marchand_routine: results[0].LONGITUDE,
-//                         routing_id: valRoutingId,
-//                         commentaire_routine: commentaire_routine,
-                        
-//                     }
-//                 })
-//                 console.log("voici la routine "+routine)
-//                 const tpePromises = tpeList.map(async (tpe) => {
-//                     const { etatChargeur, etatTpe, problemeBancaire, problemeMobile, idTerminal, descriptionProblemeMobile, descriptionProblemeBancaire, commenttaire_tpe_routine, image_tpe_routine } = tpe;
-//                     // console.log("L'image base64 est : "+image_tpe_routine)
-//                 let image_url = await convertImageToBase64(image_tpe_routine, process.env.CLOUDNAME, process.env.API_KEY, process.env.API_SECRET)
-    
-//                    return await prisma.tpe_routine.create({
-//                         data: {
-//                             etat_chargeur_tpe_routine: etatChargeur,
-//                             etat_tpe_routine: etatTpe,
-//                             probleme_mobile: problemeMobile,
-//                             description_probleme_mobile: descriptionProblemeMobile,
-//                             probleme_bancaire: problemeBancaire,
-//                             description_problemebancaire: descriptionProblemeBancaire,
-//                             id_terminal_tpe_routine: idTerminal,
-//                             routine_id: routine.id,
-//                             commenttaire_tpe_routine: commenttaire_tpe_routine,
-//                             image_tpe_routine: image_url
-//                         }
-//                     });
-//                 });
-    
-//                 const tpeResults = await Promise.all(tpePromises);
-//                 if (!tpeResults || tpeResults.some((tpe) => !tpe)) {
-//                     return res.status(500).json({ message: "Erreur lors de l'enregistrement des TPE" });
-//                 }
-    
-//                 const responsable = agent.bdm;
-//                 routine.tpe_routine = tpeResults;
-    
-//                 const tb = [routine];
-//                 await generateAndSendPDF(tb, agent, responsable);
-//                 return res.status(200).json({ message: "Votre visite a bien été enregistrée" });
-//                 }      
-//             )}}catch (error) {
-//         console.log(error);
-//         return res.status(500).json({ message: "Une erreur s'est produite lors de l'enregistrement de la visite" });
-//     }
-// }
-// const makeRoutine = async (req, res) => {
-//     console.log(req.body);
-
-//     try {
-//         const { commercialId, pointMarchand, veilleConcurrentielle, tpeList, latitudeReel, longitudeReel, routing_id, commentaire_routine } = req.body;
-
-//         const agent = await prisma.agent.findUnique({
-//             where: { id: Number(commercialId) },
-//             include: { zone_commerciale: true, bdm: true }
-//         });
-
-//         if (!agent) {
-//             return res.status(400).json({ message: "Cet agent n'existe pas dans la base" });
-//         }
-
-//         let routing = null;
-//         if (routing_id !== null && routing_id !== "") {
-//             routing = await prisma.routing.findUnique({
-//                 where: { id: Number(routing_id) }
-//             });
-
-
-//         }else if(routing_id == null && routing_id == ""){
-//             routing = await prisma.routing.findUnique({
-//                 where : {
-//                     description_routing : "ROUTING PAR DEFAUT",agent_routing_id : Number(commercialId)
-//                 }
-//             })
-//         }else{
-//                 return res.status(400).json({ message: "Ce routing n'existe pas dans la base" });
-//         }
-
-//         const pointMarchandQuery = `%${pointMarchand}%`;
-//         cnx1.conn.query("SELECT * FROM POINT_MARCHAND WHERE POINT_MARCHAND LIKE ?", [pointMarchandQuery], async (error, results, fields) => {
-//             if (error) {
-//                 console.log(error);
-//                 return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche du point marchand" });
-//             }
-
-//             if (!results.length) {
-//                 return res.status(400).json({ message: "Ce point marchand n'existe pas" });
-//             }
-
-//             const distance = calculateDistance(latitudeReel, longitudeReel, Number(results[0].LATITUDE), Number(results[0].LONGITUDE));
-//             if (distance > 10) {
-//                 console.log("la distance est de: " + distance);
-//                 return res.status(401).json({ message: "Vous devez être chez le point marchand pour effectuer la visite" });
-//             }
-
-//             const valRoutingId = routing ? routing.id : null;
-
-//             const routine = await prisma.routine.create({
-//                 data: {
-//                     date_routine: format.now(),
-//                     veille_concurentielle_routine: veilleConcurrentielle,
-//                     point_marchand_routine: pointMarchand,
-//                     commercial_routine_id: commercialId,
-//                     numero_routine: `ROUTINE-${uuid.v4().toUpperCase()}`,
-//                     latitude_marchand_routine: results[0].LATITUDE,
-//                     longitude_marchand_routine: results[0].LONGITUDE,
-//                     routing_id: valRoutingId,
-//                     commentaire_routine: commentaire_routine,
-//                 }
-//             });
-
-//             console.log("voici la routine " + routine);
-//             const tpePromises = tpeList.map(async (tpe) => {
-//                 const { etatChargeur, etatTpe, problemeBancaire, problemeMobile, idTerminal, descriptionProblemeMobile, descriptionProblemeBancaire, commenttaire_tpe_routine, image_tpe_routine } = tpe;
-
-//                 let image_url = await convertImageToBase64(image_tpe_routine, process.env.CLOUDNAME, process.env.API_KEY, process.env.API_SECRET);
-
-//                 return await prisma.tpe_routine.create({
-//                     data: {
-//                         etat_chargeur_tpe_routine: etatChargeur,
-//                         etat_tpe_routine: etatTpe,
-//                         probleme_mobile: problemeMobile,
-//                         description_probleme_mobile: descriptionProblemeMobile,
-//                         probleme_bancaire: problemeBancaire,
-//                         description_problemebancaire: descriptionProblemeBancaire,
-//                         id_terminal_tpe_routine: idTerminal,
-//                         routine_id: routine.id,
-//                         commenttaire_tpe_routine: commenttaire_tpe_routine,
-//                         image_tpe_routine: image_url
-//                     }
-//                 });
-//             });
-
-//             const tpeResults = await Promise.all(tpePromises);
-//             if (!tpeResults || tpeResults.some((tpe) => !tpe)) {
-//                 return res.status(500).json({ message: "Erreur lors de l'enregistrement des TPE" });
-//             }
-
-//             const responsable = agent.bdm;
-//             routine.tpe_routine = tpeResults;
-
-//             const tb = [routine];
-//             await generateAndSendPDF(tb, agent, responsable);
-//             return res.status(200).json({ message: "Votre visite a bien été enregistrée" });
-//         });
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json({ message: "Une erreur s'est produite lors de l'enregistrement de la visite" });
-//     }
-// }
-
-// const makeRoutine = async (req, res) => {
-//     // console.log(req.body);
-
-//     try {
-//         const { commercialId, pointMarchand, veilleConcurrentielle, tpeList, latitudeReel, longitudeReel, routing_id, commentaire_routine } = req.body;
-
-//         // Validation des entrées
-//         if (!commercialId || !pointMarchand || !tpeList || !latitudeReel || !longitudeReel) {
-//             return res.status(400).json({ message: "Tous les champs obligatoires doivent être remplis" });
-//         }
-
-//         // Vérification de l'agent
-//         const agent = await prisma.agent.findUnique({
-//             where: { id: Number(commercialId) },
-//             include: { zone_commerciale: true, bdm: true }
-//         });
-
-//         if (!agent) {
-//             return res.status(400).json({ message: "Cet agent n'existe pas dans la base" });
-//         }
-
-//         // Vérification du routing
-//         console.log(routing_id)
-
-//         let routing
-//         if (routing_id !== null) {
-//             routing = await prisma.routing.findUnique({
-//                 where: { id: Number(routing_id) }
-//             });
-//             // if (routing) {
-//             //     return res.status(400).json({ message: "Ce routing n'existe pas dans la base" });
-//             // }
-//         } else {
-//             routing = await prisma.routing.findUnique({
-//                 where: {
-//                     description_routing: "ROUTING PAR DEFAUT",
-//                     agent_routing_id: Number(commercialId)
-//                 }
-//             });
-//         }
-
-//         // Vérification du point marchand
-//         const pointMarchandQuery = `%${pointMarchand}%`;
-//         cnx1.conn.query("SELECT * FROM POINT_MARCHAND WHERE POINT_MARCHAND LIKE ?", [pointMarchandQuery], async (error, results) => {
-//             if (error) {
-//                 console.error(error);
-//                 return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche du point marchand" });
-//             }
-
-//             if (!results.length) {
-//                 return res.status(400).json({ message: "Ce point marchand n'existe pas" });
-//             }
-
-//             // Calcul de la distance
-//             const distance = calculateDistance(latitudeReel, longitudeReel, Number(results[0].LATITUDE), Number(results[0].LONGITUDE));
-//             if (distance > 10) {
-//                 console.log("La distance est de: " + distance);
-//                 return res.status(401).json({ message: "Vous devez être chez le point marchand pour effectuer la visite" });
-//             }
-//             // console.log(routing)
-
-//             // Création de la routine
-//             const routine = await prisma.routine.create({
-//                 data: {
-//                     date_routine: format.now(),
-//                     veille_concurentielle_routine: veilleConcurrentielle,
-//                     point_marchand_routine: pointMarchand,
-//                     commercial_routine_id: commercialId,
-//                     numero_routine: `ROUTINE-${uuid.v4().toUpperCase()}`,
-//                     latitude_marchand_routine: results[0].LATITUDE,
-//                     longitude_marchand_routine: results[0].LONGITUDE,
-//                     routing_id: routing.id,
-//                     commentaire_routine: commentaire_routine,
-//                 }
-//             });
-
-//             console.log("Voici la routine: " + routine);
-
-//             // Création des TPEs associées
-//             const tpePromises = tpeList.map(async (tpe) => {
-//                 const { etatChargeur, etatTpe, problemeBancaire, problemeMobile, idTerminal, descriptionProblemeMobile, descriptionProblemeBancaire, commenttaire_tpe_routine, image_tpe_routine } = tpe;
-
-//                 // Conversion de l'image en base64
-//                 const image_url = await convertImageToBase64(image_tpe_routine, process.env.CLOUDNAME, process.env.API_KEY, process.env.API_SECRET);
-
-//                 return prisma.tpe_routine.create({
-//                     data: {
-//                         etat_chargeur_tpe_routine: etatChargeur,
-//                         etat_tpe_routine: etatTpe,
-//                         probleme_mobile: problemeMobile,
-//                         description_probleme_mobile: descriptionProblemeMobile,
-//                         probleme_bancaire: problemeBancaire,
-//                         description_problemebancaire: descriptionProblemeBancaire,
-//                         id_terminal_tpe_routine: idTerminal,
-//                         routine_id: routine.id,
-//                         commenttaire_tpe_routine: commenttaire_tpe_routine,
-//                         image_tpe_routine: image_url
-//                     }
-//                 });
-//             });
-
-//             const tpeResults = await Promise.all(tpePromises);
-//             if (tpeResults.some(tpe => !tpe)) {
-//                 return res.status(500).json({ message: "Erreur lors de l'enregistrement des TPE" });
-//             }
-
-//             const responsable = agent.bdm;
-//             routine.tpe_routine = tpeResults;
-
-//             // Génération et envoi du PDF
-//             await generateAndSendPDF([routine], agent, responsable);
-//             return res.status(200).json({ message: "Votre visite a bien été enregistrée" });
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         return res.status(500).json({ message: "Une erreur s'est produite lors de l'enregistrement de la visite" });
-//     }
-// };
 
 const makeRoutine = async (req, res) => {
-    console.log(typeof req.body.routing_id)
     try {
         const { commercialId, pointMarchand, veilleConcurrentielle, tpeList, latitudeReel, longitudeReel, routing_id, commentaire_routine } = req.body;
 
         if (!commercialId || !pointMarchand || !tpeList || !latitudeReel || !longitudeReel) {
-            return res.status(400).json({ message: "Tous les champs obligatoires doivent être remplis" });
+            return res.status(400).json({ message: "Tous les champs obligatoires doivent être remplis h" });
         }
 
         const agent = await prisma.agent.findUnique({
             where: { id: Number(commercialId) },
-            include: { zone_commerciale: true, bdm: true }
+            include: {bdm_bdm_agent_bdm_idToagent : true}
         });
 
         if (!agent) {
@@ -500,10 +50,10 @@ const makeRoutine = async (req, res) => {
         }
         
         
-        console.log(routing)
+        // console.log(routing)
         const pointMarchandQuery = `%${pointMarchand}%`;
         const results = await new Promise((resolve, reject) => {
-            cnx1.conn.query("SELECT * FROM POINT_MARCHAND WHERE POINT_MARCHAND LIKE ?", [pointMarchandQuery], (error, results) => {
+            cnx1.conn.query("SELECT * FROM pm WHERE nom_pm LIKE ?", [pointMarchandQuery], (error, results) => {
                 if (error) return reject(error);
                 resolve(results);
             });
@@ -513,8 +63,8 @@ const makeRoutine = async (req, res) => {
             return res.status(400).json({ message: "Ce point marchand n'existe pas" });
         }
 
-        const distance = calculateDistance(latitudeReel, longitudeReel, Number(results[0].LATITUDE), Number(results[0].LONGITUDE));
-        if (distance > 10) {
+        const distance = calculateDistance(latitudeReel, longitudeReel, Number(results[0].latitude_pm), Number(results[0].longitude_pm));
+        if (distance > 5) {
             return res.status(401).json({ message: "Vous devez être chez le point marchand pour effectuer la visite" });
         }
 
@@ -525,8 +75,8 @@ const makeRoutine = async (req, res) => {
                 point_marchand_routine: pointMarchand,
                 commercial_routine_id: commercialId,
                 numero_routine: `ROUTINE-${uuid.v4().toUpperCase()}`,
-                latitude_marchand_routine: results[0].LATITUDE,
-                longitude_marchand_routine: results[0].LONGITUDE,
+                latitude_marchand_routine: results[0].latitude_pm,
+                longitude_marchand_routine: results[0].longitude_pm,
                 routing_id: Number(routing.id),
                 commentaire_routine: commentaire_routine,
             }
@@ -558,10 +108,9 @@ const makeRoutine = async (req, res) => {
             return res.status(500).json({ message: "Erreur lors de l'enregistrement des TPE" });
         }
 
-        const responsable = agent.bdm;
-        routine.tpe_routine = tpeResults;
-
-        await generateAndSendPDF([routine], agent, responsable);
+        // const responsable = agent.bdm;
+        // routine.tpe_routine = tpeResults;
+        // await generateAndSendPDF([routine], agent, responsable);
         return res.status(200).json({ message: "Votre visite a bien été enregistrée" });
 
     } catch (error) {
@@ -591,13 +140,13 @@ const getRoutine = async(req,res)=>{
 const getRoutineByCommercial = async(req,res)=>{
     console.log(req.body)
     const agentId = req.body.agentId;
-    prisma.agent.findUnique({
+   await prisma.agent.findUnique({
         where : {
             id : Number(agentId)
         }
     }).then(agent=>{
         if(agent){
-            prisma.routine.findMany({
+         prisma.routine.findMany({
                 where : {commercial_routine_id : Number(agentId)},
                 include : {
                     tpe_routine : true
@@ -623,7 +172,7 @@ const getRoutineByCommercial = async(req,res)=>{
 const getSnBypointMarchand = async(req,res)=>{
     const pointMarchand = req.body.pointMarchand;
 
-    cnx1.conn.query("SELECT SERIAL_NUMBER FROM TPE INNER JOIN POINT_MARCHAND ON TPE.POINT_MARCHAND = POINT_MARCHAND.POINT_MARCHAND WHERE TPE.POINT_MARCHAND LIKE ?", [pointMarchand], (error, results, fields) => {
+   await cnx1.conn.query("SELECT SERIAL_NUMBER FROM TPE INNER JOIN POINT_MARCHAND ON TPE.POINT_MARCHAND = POINT_MARCHAND.POINT_MARCHAND WHERE TPE.POINT_MARCHAND LIKE ?", [pointMarchand], (error, results, fields) => {
         if (error) {
             console.log(error);
             return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des TPE" });
@@ -970,37 +519,6 @@ const getAllMerchants = async(req,res)=>{
     });
 }
 
-
-
-// const updateMerchant = async(req,res)=>{
-
-//     const latitude = req.body.latitude
-//     const longitude = req.body.longitude
-//     const pointMarchand = req.body.pm
-
-//     if(!latitude||!longitude||!pointMarchand){
-
-//         return res.status(400).json({message :"Tous les champs sont disponibles"})
-//     }else{
-//         cnx1.conn.query("UPDATE POINT_MARCHAND SET POINT_MARCHAND.LATITUDE = ? , POINT_MARCHAND.LONGITUDE = ? WHERE POINT_MARCHAND.POINT_MARCHAND = ?", [latitude],[longitude],[pointMarchand], (error,results,fields)=>{
-//             if(error){
-//                 console.log(error)
-//                 return res.status(400).json(error)
-//             }
-
-//             if (!results.length) {
-//                 return res.status(400).json({ message: "Aucun PM trouvé" });
-//             }
-    
-//             return res.status(200).json(results);
-//     })
-//     }
-
-
-
-
-// }
-
 const updateMerchant = async (req, res) => {
     const { latitude, longitude, pm } = req.body;
     console.log(latitude,longitude,pm)
@@ -1030,7 +548,7 @@ const updateMerchant = async (req, res) => {
             })
         }else{
             console.log("NON OK")
-            return res.status(400).json({message : "Ce point Marchand existe déja dans la Base"})
+            return res.status(401).json({message : "Ce point Marchand existe déja dans la Base"})
         }
 
     }
@@ -1038,6 +556,19 @@ const updateMerchant = async (req, res) => {
 
     
 };
+
+const getProfile = async (req,res)=>{
+
+    const agentId = req.body.agentId
+    
+    if(!agentId){
+        return res.status(400).json({message : "Tous les champs sont obligatoires"}
+        
+        )
+    }else{
+        const agent = await prisma.agent.findMany({where:{id : Number(agentId)}})
+    }
+}
 
 
 module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm, getAllMerchants, updateMerchant};

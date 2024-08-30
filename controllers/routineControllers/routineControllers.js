@@ -122,7 +122,7 @@ const makeRoutine = async (req, res) => {
 
 
 const getRoutine = async(req,res)=>{
-     prisma.routine.findMany({
+    await prisma.routine.findMany({
         include:{
             tpe_routine : true
         }
@@ -477,14 +477,14 @@ const getPms =async (req, res) => {
 };
 
 
-const getAllRoutinesByBdm = (req, res) => {
+const getAllRoutinesByBdm = async(req, res) => {
     const bdmId = Number(req.body.bdmId);  // Assurez-vous que bdmId est passé comme paramètre de la requête
     console.log(bdmId)
     if (!bdmId) {
         return res.status(400).json({ message: "bdmId est requis" });
     }
 
-    cnx2.conn.query(`
+   await cnx2.conn.query(`
         SELECT nom_agent,prenom_agent,point_marchand_routine,date_routine,veille_concurentielle_routine,commentaire_routine,id_terminal_tpe_routine,etat_tpe_routine,etat_chargeur_tpe_routine,probleme_bancaire,description_problemebancaire,probleme_mobile,description_probleme_mobile,commenttaire_tpe_routine,image_tpe_routine FROM routine INNER JOIN routing ON routine.routing_id = routing.id JOIN bdm JOIN tpe_routine ON tpe_routine.routine_id = routing.id JOIN agent ON agent.id =routine.commercial_routine_id WHERE bdm.id =?`, 
         [bdmId], 
         (error, rows) => {

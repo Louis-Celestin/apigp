@@ -28,8 +28,8 @@ app.use(cors())
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/api',usersRoutes)
-app.use('/api',livraisonRoutes)
-app.use('/api',deploiementRoutes)
+// app.use('/api',livraisonRoutes)
+// app.use('/api',deploiementRoutes)
 app.use('/api',routinesRoutes)
 app.use('/api',pmRoutes) 
 

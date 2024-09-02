@@ -288,7 +288,7 @@ const makeRoutine = async (req, res) => {
                     veille_concurentielle_routine: veilleConcurrentielle,
                     point_marchand_routine: pointMarchand,
                     commercial_routine_id: commercialId,
-                    numero_routine: `ROUTINE1`,
+                    numero_routine: `ROUTINE-${uuid.v4().toUpperCase()}`,
                     latitude_marchand_routine: results[0].latitude_pm,
                     longitude_marchand_routine: results[0].longitude_pm,
                     routing_id: Number(routing.id),
@@ -327,7 +327,7 @@ const makeRoutine = async (req, res) => {
         });
 
         // Réponse en cas de succès
-        return res.status(200).json({ message: "Votre visite a bien été enregistrée" });
+        return res.status(200).json({routine, message: "Votre visite a bien été enregistrée" });
 
     } catch (error) {
         console.error("Erreur lors de l'enregistrement de la visite:", error);
@@ -736,25 +736,62 @@ const getAllRoutinesByBdm = async (req, res) => {
 };
 
 
+// const getAllMerchants = async (req, res) => {
+//     const SOFTPOS = "SOFTPOS";
+
+//     try {
+//         const [results] = await pool1.query(
+//             "SELECT POINT_MARCHAND FROM POINT_MARCHAND WHERE POINT_MARCHAND.GROUPE <> ?",
+//             [SOFTPOS]
+//         );
+
+//         if (!results.length) {
+//             return res.status(400).json({ message: "Aucun PM trouvé" });
+//         }
+
+//         return res.status(200).json(results);
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des PM" });
+//     }
+// };
+
 const getAllMerchants = async (req, res) => {
     const SOFTPOS = "SOFTPOS";
 
     try {
-        const [results] = await pool1.query(
-            "SELECT POINT_MARCHAND FROM POINT_MARCHAND WHERE POINT_MARCHAND.GROUPE <> ?",
-            [SOFTPOS]
-        );
+        // Réessayez la requête jusqu'à 3 fois en cas d'échec
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                const [results] = await pool1.query(
+                    "SELECT POINT_MARCHAND FROM POINT_MARCHAND WHERE POINT_MARCHAND.GROUPE <> ?",
+                    [SOFTPOS]
+                );
 
-        if (!results.length) {
-            return res.status(400).json({ message: "Aucun PM trouvé" });
+                if (!results.length) {
+                    return res.status(400).json({ message: "Aucun PM trouvé" });
+                }
+
+                return res.status(200).json(results);
+            } catch (error) {
+                if (error.code === 'ECONNRESET') {
+                    console.warn('Connexion réinitialisée, tentative de reconnexion...');
+                    retries--;
+                    if (retries === 0) {
+                        throw new Error('Impossible de récupérer les données après plusieurs tentatives');
+                    }
+                } else {
+                    throw error;
+                }
+            }
         }
-
-        return res.status(200).json(results);
     } catch (error) {
-        console.log(error);
+        console.error("Erreur lors de la recherche des PM:", error);
         return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des PM" });
     }
 };
+
 
 const updateMerchant = async (req, res) => {
     const { latitude, longitude, pm } = req.body;
@@ -807,7 +844,6 @@ const getProfile = async (req,res)=>{
         return res.status(200).json(agent)
     }
 }
-
 
 module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm, getAllMerchants, getProfile,updateMerchant};
 

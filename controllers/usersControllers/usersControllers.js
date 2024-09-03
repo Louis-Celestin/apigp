@@ -32,6 +32,65 @@ const register = async (req, res, next) => {
     });
 };
 
+// const login = async (req, res, next) => {
+//   try {
+//     console.log(req.body);
+
+//     const { username, password } = req.body;
+//     let bdmId;
+
+//     // Trouver l'utilisateur avec l'agent associé
+//     const users = await prisma.users.findMany({
+//       include: {
+//         agent: true,
+//       },
+//       where: {
+//         username_user: username,
+//       },
+//     });
+
+//     if (users.length === 0) {
+//       return res.status(400).json({ message: "Nom d'utilisateur ou mot de passe incorrect" });
+//     }
+
+//     const user = users[0];
+//     const isMatch = await bcrypt.compare(password, user.password_user);
+
+//     if (!isMatch) {
+//       return res.status(400).json({ message: "Nom d'utilisateur ou mot de passe incorrect" });
+//     }
+
+//     // Trouver le BDM associé à l'agent
+//     if (user.agent) {
+//       const bdm = await prisma.bdm.findMany({
+//         where: { agent_bdm_id: Number(user.agent_user_id) },
+//         select: { id: true },
+//       });
+
+//       if (bdm.length) {
+//         bdmId = bdm[0].id;
+//       } else {
+//         console.log("PAS DE DONNEES");
+//       }
+//     }
+
+//     // Créer un token JWT
+//     const token = Jwt.sign({ iduser: user.id }, "SECRETKEY", { expiresIn: "1h" });
+//     user.password_user = undefined;
+//     user.agent = undefined;
+//     user.token = token;
+
+//     // Inclure globalVariable dans la réponse
+//     return res.status(200).json({
+//       user,
+//       bdmId
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(400).json({ message: "Erreur lors de la connexion" });
+//   }
+// };
+
 const login = async (req, res, next) => {
   try {
     console.log(req.body);
@@ -87,9 +146,10 @@ const login = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(400).json({ message: "Erreur lors de la connexion" });
+    return res.status(500).json({ message: "Erreur lors de la connexion" });
   }
 };
+
 
 
 

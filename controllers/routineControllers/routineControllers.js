@@ -497,7 +497,7 @@ const getRoutineByCommercial = async(req,res)=>{
                 if(routine.length){
                     return res.status(200).json(routine)
                 }else{
-                    return res.status(400).json({message : "Vous n'avez pas de routine"})
+                    return res.status(401).json({message : "Vous n'avez pas de routine"})
                 }
             }).catch(err=>{
                 console.log(err)
@@ -545,7 +545,7 @@ const getSnBypointMarchand = async (req, res) => {
             if (results.length > 0) {
                 return res.status(200).json(results);
             } else {
-                return res.status(400).json({ message: "Aucun TPE trouvé pour ce point marchand" });
+                return res.status(401).json({ message: "Aucun TPE trouvé pour ce point marchand" });
             }
         } catch (error) {
             if (error.code === 'ECONNRESET') {
@@ -731,7 +731,7 @@ const getRoutingByCommercial = async (req,res)=>{
                 if(routing.length){
                     return res.status(200).json(routing)
                 }else{
-                    return res.status(400).json({message : "Vous n'avez pas de routing"})
+                    return res.status(401).json({message : "Vous n'avez pas de routing"})
                 }
             }).catch(err=>{
                 console.log(err)
@@ -926,7 +926,7 @@ const getPms = async (req, res) => {
                 if (results.length > 0) {
                     return res.status(200).json(results);
                 } else {
-                    return res.status(404).json({ message: "Aucun point marchand trouvé" });
+                    return res.status(401).json({ message: "Aucun point marchand trouvé" });
                 }
             } catch (error) {
                 if (error.code === 'ECONNRESET') {
@@ -1019,7 +1019,7 @@ const getAllMerchants = async (req, res) => {
                 );
 
                 if (!results.length) {
-                    return res.status(400).json({ message: "Aucun PM trouvé" });
+                    return res.status(401).json({ message: "Aucun PM trouvé" });
                 }
 
                 return res.status(200).json(results);

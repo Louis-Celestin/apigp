@@ -49,7 +49,7 @@ const trouverPointsMarchandsProches = async (req,res) => {
         });
     
         if (pointsMarchandsProches.length === 0) {
-            return res.status(404).json({ message: 'Aucun point marchand trouvé dans un rayon de 5 mètres' });
+            return res.status(401).json({ message: 'Aucun point marchand trouvé dans un rayon de 5 mètres' });
         } else {
             console.log(pointsMarchandsProches)
             return res.status(200).json(pointsMarchandsProches);

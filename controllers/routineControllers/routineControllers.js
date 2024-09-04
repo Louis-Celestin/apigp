@@ -224,6 +224,117 @@ const unlink = promisify(fs.unlink);
 
 
 
+// const makeRoutine = async (req, res) => {
+//     try {
+//         const { commercialId, pointMarchand, veilleConcurrentielle, tpeList, latitudeReel, longitudeReel, routing_id, commentaire_routine } = req.body;
+
+//         // Validation des champs requis
+//         if (!commercialId || !pointMarchand || !tpeList || !latitudeReel || !longitudeReel) {
+//             return res.status(400).json({ message: "Tous les champs obligatoires doivent être remplis" });
+//         }
+
+//         // Vérification de l'existence de l'agent
+//         const agent = await prisma.agent.findUnique({
+//             where: { id: Number(commercialId) },
+//             include: { bdm_bdm_agent_bdm_idToagent: true }
+//         });
+
+//         if (!agent) {
+//             return res.status(400).json({ message: "Cet agent n'existe pas dans la base" });
+//         }
+
+//         // Vérification du routing
+//         let routing;
+//         if (typeof routing_id === "number") {
+//             routing = await prisma.routing.findUnique({
+//                 where: { id: Number(routing_id) }
+//             });
+//         } else if (typeof routing_id === "string") {
+//             routing = await prisma.routing.findFirst({
+//                 where: {
+//                     AND: [
+//                         { description_routing: "ROUTING PAR DEFAUT" }
+//                     ]
+//                 }
+//             });
+//         }
+        
+//         // Recherche du point marchand dans la base de données
+//         console.log(pointMarchand)
+//         const pointMarchandQuery = `%${pointMarchand}%`;
+//         const [results] = await pool2.query(
+//             "SELECT * FROM pm WHERE nom_pm LIKE ?", 
+//             [pointMarchandQuery]
+//         );
+
+//         console.log(results)
+
+//         if (results.length === 0) {
+//             return res.status(400).json({ message: "Ce point marchand n'existe pas" });
+//         }
+
+//         // Calcul de la distance et validation
+//         const distance = calculateDistance(latitudeReel, longitudeReel, Number(results[0].latitude_pm), Number(results[0].longitude_pm));
+//         if (distance > 5) {
+//             return res.status(401).json({ message: "Vous devez être chez le point marchand pour effectuer la visite" });
+//         }
+
+//         // Transaction pour garantir l'atomicité
+//         const routine = await prisma.$transaction(async (prisma) => {
+//             // Création de la routine
+//             const routine = await prisma.routine.create({
+//                 data: {
+//                     date_routine: new Date(),
+//                     veille_concurentielle_routine: veilleConcurrentielle,
+//                     point_marchand_routine: pointMarchand,
+//                     commercial_routine_id: commercialId,
+//                     numero_routine: `ROUTINE-${uuid.v4().toUpperCase()}`,
+//                     latitude_marchand_routine: results[0].latitude_pm,
+//                     longitude_marchand_routine: results[0].longitude_pm,
+//                     routing_id: Number(routing.id),
+//                     commentaire_routine: commentaire_routine
+//                 }
+//             });
+
+//             // Traitement des TPE
+//             const tpePromises = tpeList.map(async (tpe) => {
+//                 const { etatChargeur, etatTpe, problemeBancaire, problemeMobile, idTerminal, descriptionProblemeMobile, descriptionProblemeBancaire, commenttaire_tpe_routine, image_tpe_routine } = tpe;
+
+//                 const image_url = await convertImageToBase64(image_tpe_routine, process.env.CLOUDNAME, process.env.API_KEY, process.env.API_SECRET);
+
+//                 return prisma.tpe_routine.create({
+//                     data: {
+//                         etat_chargeur_tpe_routine: etatChargeur,
+//                         etat_tpe_routine: etatTpe,
+//                         probleme_mobile: problemeMobile,
+//                         description_probleme_mobile: descriptionProblemeMobile,
+//                         probleme_bancaire: problemeBancaire,
+//                         description_problemebancaire: descriptionProblemeBancaire,
+//                         id_terminal_tpe_routine: idTerminal,
+//                         routine_id: routine.id,
+//                         commenttaire_tpe_routine: commenttaire_tpe_routine,
+//                         image_tpe_routine: image_url
+//                     }
+//                 });
+//             });
+
+//             const tpeResults = await Promise.all(tpePromises);
+//             if (tpeResults.some(tpe => !tpe)) {
+//                 throw new Error("Erreur lors de l'enregistrement des TPE");
+//             }
+
+//             return routine;
+//         });
+
+//         // Réponse en cas de succès
+//         return res.status(200).json({routine, message: "Votre visite a bien été enregistrée" });
+
+//     } catch (error) {
+//         console.error("Erreur lors de l'enregistrement de la visite:", error);
+//         return res.status(500).json({ message: "Une erreur s'est produite lors de l'enregistrement de la visite" });
+//     }
+// };
+
 const makeRoutine = async (req, res) => {
     try {
         const { commercialId, pointMarchand, veilleConcurrentielle, tpeList, latitudeReel, longitudeReel, routing_id, commentaire_routine } = req.body;
@@ -258,19 +369,35 @@ const makeRoutine = async (req, res) => {
                 }
             });
         }
-        
-        // Recherche du point marchand dans la base de données
-        console.log(pointMarchand)
+
+        // Recherche du point marchand dans la base de données avec tentatives de reconnexion
         const pointMarchandQuery = `%${pointMarchand}%`;
-        const [results] = await pool2.query(
-            "SELECT * FROM pm WHERE nom_pm LIKE ?", 
-            [pointMarchandQuery]
-        );
+        let retries = 3;
+        let results;
 
-        console.log(results)
+        while (retries > 0) {
+            try {
+                [results] = await pool2.query(
+                    "SELECT * FROM pm WHERE nom_pm LIKE ?", 
+                    [pointMarchandQuery]
+                );
 
-        if (results.length === 0) {
-            return res.status(400).json({ message: "Ce point marchand n'existe pas" });
+                if (results.length > 0) {
+                    break; // Sortir de la boucle si la requête réussit
+                } else {
+                    return res.status(400).json({ message: "Ce point marchand n'existe pas" });
+                }
+            } catch (error) {
+                if (error.code === 'ECONNRESET') {
+                    console.warn('Connexion réinitialisée, tentative de reconnexion...');
+                    retries--;
+                    if (retries === 0) {
+                        throw new Error('Impossible de récupérer les données après plusieurs tentatives');
+                    }
+                } else {
+                    throw error;
+                }
+            }
         }
 
         // Calcul de la distance et validation
@@ -384,23 +511,55 @@ const getRoutineByCommercial = async(req,res)=>{
 
 }
 
+// const getSnBypointMarchand = async (req, res) => {
+//     const pointMarchand = req.body.pointMarchand;
+
+//     try {
+//         const [results] = await pool1.query(
+//             "SELECT SERIAL_NUMBER FROM TPE INNER JOIN POINT_MARCHAND ON TPE.POINT_MARCHAND = POINT_MARCHAND.POINT_MARCHAND WHERE TPE.POINT_MARCHAND LIKE ?",
+//             [pointMarchand]
+//         );
+
+//         if (results.length > 0) {
+//             return res.status(200).json(results);
+//         } else {
+//             return res.status(400).json({ message: "Aucun TPE trouvé pour ce point marchand" });
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des TPE" });
+//     }
+// };
+
 const getSnBypointMarchand = async (req, res) => {
     const pointMarchand = req.body.pointMarchand;
+    let retries = 3;
 
-    try {
-        const [results] = await pool1.query(
-            "SELECT SERIAL_NUMBER FROM TPE INNER JOIN POINT_MARCHAND ON TPE.POINT_MARCHAND = POINT_MARCHAND.POINT_MARCHAND WHERE TPE.POINT_MARCHAND LIKE ?",
-            [pointMarchand]
-        );
+    while (retries > 0) {
+        try {
+            const [results] = await pool1.query(
+                "SELECT SERIAL_NUMBER FROM TPE INNER JOIN POINT_MARCHAND ON TPE.POINT_MARCHAND = POINT_MARCHAND.POINT_MARCHAND WHERE TPE.POINT_MARCHAND LIKE ?",
+                [pointMarchand]
+            );
 
-        if (results.length > 0) {
-            return res.status(200).json(results);
-        } else {
-            return res.status(400).json({ message: "Aucun TPE trouvé pour ce point marchand" });
+            if (results.length > 0) {
+                return res.status(200).json(results);
+            } else {
+                return res.status(400).json({ message: "Aucun TPE trouvé pour ce point marchand" });
+            }
+        } catch (error) {
+            if (error.code === 'ECONNRESET') {
+                console.warn('Connexion réinitialisée, tentative de reconnexion...');
+                retries--;
+                if (retries === 0) {
+                    console.error('Impossible de récupérer les données après plusieurs tentatives');
+                    return res.status(500).json({ message: "Erreur lors de la récupération des données" });
+                }
+            } else {
+                console.error("Erreur lors de la recherche des TPE:", error);
+                return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des TPE" });
+            }
         }
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des TPE" });
     }
 };
 
@@ -678,62 +837,62 @@ const getMyAgents = async(req,res)=>{
     }).catch(err=>console.log(err))
 }
 
-const getPms = async (req, res) => {
-    try {
-        const [results] = await pool1.query("SELECT * FROM POINT_MARCHAND");
+// const getPms = async (req, res) => {
+//     try {
+//         const [results] = await pool1.query("SELECT * FROM POINT_MARCHAND");
 
-        if (results.length > 0) {
-            return res.status(200).json(results);
-        } else {
-            return res.status(404).json({ message: "Aucun point marchand trouvé" });
-        }
-    } catch (error) {
-        console.error("Erreur lors de la récupération des points marchands:", error);
-        return res.status(500).json({ message: "Erreur serveur" });
-    }
-};
+//         if (results.length > 0) {
+//             return res.status(200).json(results);
+//         } else {
+//             return res.status(404).json({ message: "Aucun point marchand trouvé" });
+//         }
+//     } catch (error) {
+//         console.error("Erreur lors de la récupération des points marchands:", error);
+//         return res.status(500).json({ message: "Erreur serveur" });
+//     }
+// };
 
 
-const getAllRoutinesByBdm = async (req, res) => {
-    const bdmId = Number(req.body.bdmId);  // Assurez-vous que bdmId est passé comme paramètre de la requête
-    console.log(bdmId);
+// const getAllRoutinesByBdm = async (req, res) => {
+//     const bdmId = Number(req.body.bdmId);  // Assurez-vous que bdmId est passé comme paramètre de la requête
+//     console.log(bdmId);
 
-    if (!bdmId) {
-        return res.status(400).json({ message: "bdmId est requis" });
-    }
+//     if (!bdmId) {
+//         return res.status(400).json({ message: "bdmId est requis" });
+//     }
 
-    try {
-        const [rows] = await pool2.query(`
-            SELECT 
-                nom_agent, prenom_agent, point_marchand_routine, date_routine, 
-                veille_concurentielle_routine, commentaire_routine, id_terminal_tpe_routine, 
-                etat_tpe_routine, etat_chargeur_tpe_routine, probleme_bancaire, 
-                description_problemebancaire, probleme_mobile, description_probleme_mobile, 
-                commenttaire_tpe_routine, image_tpe_routine 
-            FROM 
-                routine 
-            INNER JOIN 
-                routing ON routine.routing_id = routing.id 
-            JOIN 
-                bdm 
-            JOIN 
-                tpe_routine ON tpe_routine.routine_id = routing.id 
-            JOIN 
-                agent ON agent.id = routine.commercial_routine_id 
-            WHERE 
-                bdm.id = ?
-        `, [bdmId]);
+//     try {
+//         const [rows] = await pool2.query(`
+//             SELECT 
+//                 nom_agent, prenom_agent, point_marchand_routine, date_routine, 
+//                 veille_concurentielle_routine, commentaire_routine, id_terminal_tpe_routine, 
+//                 etat_tpe_routine, etat_chargeur_tpe_routine, probleme_bancaire, 
+//                 description_problemebancaire, probleme_mobile, description_probleme_mobile, 
+//                 commenttaire_tpe_routine, image_tpe_routine 
+//             FROM 
+//                 routine 
+//             INNER JOIN 
+//                 routing ON routine.routing_id = routing.id 
+//             JOIN 
+//                 bdm 
+//             JOIN 
+//                 tpe_routine ON tpe_routine.routine_id = routing.id 
+//             JOIN 
+//                 agent ON agent.id = routine.commercial_routine_id 
+//             WHERE 
+//                 bdm.id = ?
+//         `, [bdmId]);
 
-        if (rows.length > 0) {
-            return res.status(200).json(rows);
-        } else {
-            return res.status(404).json({ message: "Aucune donnée trouvée pour cet ID BDM" });
-        }
-    } catch (error) {
-        console.error("Erreur lors de la récupération des données:", error);
-        return res.status(500).json({ message: "Erreur serveur" });
-    }
-};
+//         if (rows.length > 0) {
+//             return res.status(200).json(rows);
+//         } else {
+//             return res.status(404).json({ message: "Aucune donnée trouvée pour cet ID BDM" });
+//         }
+//     } catch (error) {
+//         console.error("Erreur lors de la récupération des données:", error);
+//         return res.status(500).json({ message: "Erreur serveur" });
+//     }
+// };
 
 
 // const getAllMerchants = async (req, res) => {
@@ -755,6 +914,96 @@ const getAllRoutinesByBdm = async (req, res) => {
 //         return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des PM" });
 //     }
 // };
+
+const getPms = async (req, res) => {
+    try {
+        // Réessayez la requête jusqu'à 3 fois en cas d'échec
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                const [results] = await pool1.query("SELECT * FROM POINT_MARCHAND");
+
+                if (results.length > 0) {
+                    return res.status(200).json(results);
+                } else {
+                    return res.status(404).json({ message: "Aucun point marchand trouvé" });
+                }
+            } catch (error) {
+                if (error.code === 'ECONNRESET') {
+                    console.warn('Connexion réinitialisée, tentative de reconnexion...');
+                    retries--;
+                    if (retries === 0) {
+                        throw new Error('Impossible de récupérer les données après plusieurs tentatives');
+                    }
+                } else {
+                    throw error;
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération des points marchands:", error);
+        return res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+
+const getAllRoutinesByBdm = async (req, res) => {
+    const bdmId = Number(req.body.bdmId);  // Assurez-vous que bdmId est passé comme paramètre de la requête
+    console.log(bdmId);
+
+    if (!bdmId) {
+        return res.status(400).json({ message: "bdmId est requis" });
+    }
+
+    try {
+        // Réessayez la requête jusqu'à 3 fois en cas d'échec
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                const [rows] = await pool2.query(`
+                    SELECT 
+                        nom_agent, prenom_agent, point_marchand_routine, date_routine, 
+                        veille_concurentielle_routine, commentaire_routine, id_terminal_tpe_routine, 
+                        etat_tpe_routine, etat_chargeur_tpe_routine, probleme_bancaire, 
+                        description_problemebancaire, probleme_mobile, description_probleme_mobile, 
+                        commenttaire_tpe_routine, image_tpe_routine 
+                    FROM 
+                        routine 
+                    INNER JOIN 
+                        routing ON routine.routing_id = routing.id 
+                    JOIN 
+                        bdm 
+                    JOIN 
+                        tpe_routine ON tpe_routine.routine_id = routing.id 
+                    JOIN 
+                        agent ON agent.id = routine.commercial_routine_id 
+                    WHERE 
+                        bdm.id = ?
+                `, [bdmId]);
+
+                if (rows.length > 0) {
+                    return res.status(200).json(rows);
+                } else {
+                    return res.status(404).json({ message: "Aucune donnée trouvée pour cet ID BDM" });
+                }
+            } catch (error) {
+                if (error.code === 'ECONNRESET') {
+                    console.warn('Connexion réinitialisée, tentative de reconnexion...');
+                    retries--;
+                    if (retries === 0) {
+                        throw new Error('Impossible de récupérer les données après plusieurs tentatives');
+                    }
+                } else {
+                    throw error;
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération des données:", error);
+        return res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
 
 const getAllMerchants = async (req, res) => {
     const SOFTPOS = "SOFTPOS";

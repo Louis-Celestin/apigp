@@ -1,4 +1,5 @@
 const axios = require('axios');
+require('dotenv').config()
 
 const sendWhatsapp = async(number,mobileCoach,tpes)=>{
   console.log(number)
@@ -38,7 +39,7 @@ const sendWhatsapp = async(number,mobileCoach,tpes)=>{
         url: 'https://graph.facebook.com/v18.0/236506329550149/messages',
         headers: { 
           'Content-Type': 'application/json', 
-          'Authorization': 'Bearer EAAZAn2JABS9cBO3DcIBCwOzfw9OLmrIMGPz8IH2JSkZCwKeeSfV3ft1QTTisViojMaHAbyymKzIi3BsaipB7FgjOqMXCdwIhU3j4AvA6iZCHv3bMX5PsbiB3ruVnNDPV5BUicTy2Cw4sWJ4JVGs7MhmuI58KEPHh3eILLqAxBkuA5GWuQeHKBZBt6LjFXUxa9IicQeLZCAFj0gWToI3sZD', 
+          'Authorization': `Bearer ${process.env.WHATSSAP_TOKEN}`, 
           'Cookie': 'ps_l=0; ps_n=0'
         },
       

@@ -961,24 +961,7 @@ const getAllRoutinesByBdm = async (req, res) => {
         while (retries > 0) {
             try {
                 const [rows] = await pool2.query(`
-                    SELECT 
-                        nom_agent, prenom_agent, point_marchand_routine, date_routine, 
-                        veille_concurentielle_routine, commentaire_routine, id_terminal_tpe_routine, 
-                        etat_tpe_routine, etat_chargeur_tpe_routine, probleme_bancaire, 
-                        description_problemebancaire, probleme_mobile, description_probleme_mobile, 
-                        commenttaire_tpe_routine, image_tpe_routine 
-                    FROM 
-                        routine 
-                    INNER JOIN 
-                        routing ON routine.routing_id = routing.id 
-                    JOIN 
-                        bdm 
-                    JOIN 
-                        tpe_routine ON tpe_routine.routine_id = routing.id 
-                    JOIN 
-                        agent ON agent.id = routine.commercial_routine_id 
-                    WHERE 
-                        bdm.id = ?
+SELECT * FROM routine INNER JOIN tpe_routine ON tpe_routine.routine_id = routine.id JOIN routing JOIN bdm ON routing.bdm_routing_id = bdm.id JOIN agent ON agent.responsable_agent_id = bdm.id WHERE bdm.id = ?
                 `, [bdmId]);
 
                 if (rows.length > 0) {

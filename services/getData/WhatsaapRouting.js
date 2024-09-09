@@ -48,7 +48,7 @@ const sendWhatsappRouting = async (number, mobileCoach, pms, resposable) => {
         url: 'https://graph.facebook.com/v20.0/236506329550149/messages',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer EAAZAn2JABS9cBO0wL5A3y82R96icBYmWoBZBJeCcRLnZBPZA2d5ANBVVZAiBsZAXQS1hQoXdZAtuhI2zSpPKb8miPioUwdi5hZAVsb8WUjrStvYHfqwfpL8taLS3z0lOft5gUy8drZBjmwG6LtcTyjxhZAZC7A1zwaHBZB9r23xndEFZAZC9ZAYT1UgHvlkhnOalVBi5eQZA1iP7cMrv62n1h09DUtEZD', // Remplacez par votre token d'autorisation
+            'Authorization': 'Bearer '+process.env.WHATSSAP_TOKEN, // Remplacez par votre token d'autorisation
             'Cookie': 'ps_l=0; ps_n=0'
         },
         data: data

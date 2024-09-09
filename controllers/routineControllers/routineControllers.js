@@ -10,6 +10,7 @@ const convertImageToBase64 = require("../../services/getData/base64");
 const { sendWhatsappRouting } = require("../../services/getData/WhatsaapRouting");
 const  pool1  = require("../../services/getData/dbConnectPowerBi");
 const pool2 = require("../../services/getData/dbConnectAlwaysdata");
+const { sendNotification } = require("../../services/getData/sendNotification");
 const writeFile = promisify(fs.writeFile);
 const unlink = promisify(fs.unlink);
 
@@ -364,12 +365,14 @@ const makeRoutine = async (req, res) => {
             routing = await prisma.routing.findFirst({
                 where: {
                     AND: [
-                        { description_routing: "ROUTING PAR DEFAUT" }
+                        { description_routing: "ROUTING PAR DEFAUT" },
+                        {agent_routing_id : Number(commercialId)}
                     ]
                 }
             });
         }
 
+        console.log(`Voici le routing trouvé ${routing.description_routing} avec le ID ${routing.id}`)
         // Recherche du point marchand dans la base de données avec tentatives de reconnexion
         const pointMarchandQuery = `%${pointMarchand}%`;
         let retries = 3;
@@ -643,6 +646,7 @@ const createRouting = async(req,res)=>{
     const date_debut_routing = req.body.date_debut_routing;
     const date_fin_routing = req.body.date_fin_routing;
     const pm_routing = req.body.pm_routing;
+    const deveiceToken = req.body.deveiceToken;
 
     if(!bdmId || !agentId || !description_routing || !date_debut_routing || !date_fin_routing || !pm_routing){
         return res.status(400).json({message : "Veuillez remplir tous les champs"})
@@ -685,6 +689,11 @@ const createRouting = async(req,res)=>{
                                           }).catch(err=>{
                                             console.log("Erreur"+err)
                                           })
+                                        //   try {
+                                        //      sendNotification(deveiceToken,agentwha[0].nom_agent,pm_routing,`${bdm[0].nom_bdm} ${bdm[0].prenom_bdm}`)
+                                        //   } catch (error) {
+                                        //     console.log(error)
+                                        //   }
                                         return res.status(200).json({message : "Routing créé avec succès"})
                                     }else{
                                         console.log("RAMBA")

@@ -152,6 +152,30 @@ const login = async (req, res, next) => {
 
 
 
+const updateFcmUserToken = async(req,res)=>{
+
+    const userId = req.body.userId
+    const fcmToken = req.body.fcmToken
+    if(!userId || !fcmToken){
+      return res.status(400).json({message:"Tous les champs sont obligatoires"})
+    }
+    const user = await prisma.users.findUnique({where:{id :Number(userId)}})
+
+    if(!user){
+      return res.status(401).json({message:"Cet utilisateur n'existe pas"})
+    }else{
+  await prisma.users.update({data : {fcm_token_user : fcmToken},where : {id : Number(userId)}}).then((result)=>{
+    if(result){
+      return res.status(200).json({message:"Token mis à jour"})
+    }
+  })
+
+    }
+
+  }
+
+
+
 
 // const login = async (req, res, next) => {
 //     try {
@@ -204,4 +228,4 @@ const login = async (req, res, next) => {
 //       return res.status(400).json({ message: "Erreur lors de la connexion" });
 //     }
 //   };  
-module.exports = { register, login };
+module.exports = { register, login,updateFcmUserToken };

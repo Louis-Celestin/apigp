@@ -5,6 +5,6 @@ const middlewares = require('../../middlewares/userMiddlewares/verifyusernameOre
 
 router.post("/register",middlewares.checkUser,controllers.register)
 router.post("/login", middlewares.checkIfExists, controllers.login)
-
+router.put("/updateFcmUserToken",[],controllers.updateFcmUserToken)
 
 module.exports = router

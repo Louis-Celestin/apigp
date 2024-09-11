@@ -209,13 +209,14 @@ model type_agent {
 }
 
 model users {
-  id            Int    @id @default(autoincrement())
-  agent_user_id Int    @unique(map: "UNIQ_1483A5E9753DB13F")
-  role_user_id  Int
-  username_user String @db.VarChar(255)
-  password_user String @db.VarChar(255)
-  roles         roles  @relation(fields: [role_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E91BA3766E")
-  agent         agent  @relation(fields: [agent_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E9753DB13F")
+  id             Int     @id @default(autoincrement())
+  agent_user_id  Int     @unique(map: "UNIQ_1483A5E9753DB13F")
+  role_user_id   Int
+  username_user  String  @db.VarChar(255)
+  password_user  String  @db.VarChar(255)
+  fcm_token_user String? @db.VarChar(255)
+  roles          roles   @relation(fields: [role_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E91BA3766E")
+  agent          agent   @relation(fields: [agent_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E9753DB13F")
 
   @@index([role_user_id], map: "IDX_1483A5E91BA3766E")
 }

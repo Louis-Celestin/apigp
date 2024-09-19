@@ -15,6 +15,8 @@ const routinesRoutes = require("./routes/routineRoutes/routinesRoutes")
 const pmRoutes = require("./routes/pmRoutes/pmRoutes")
 const cors = require('cors');
 
+
+
 const app = express()
 app.use(express.json( {
   limit : '900mb'
@@ -23,6 +25,8 @@ app.use(express.urlencoded({
   extended: true,
   limit : '900mb'
 }));
+
+
 
 app.use(cors())
 

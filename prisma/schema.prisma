@@ -108,10 +108,11 @@ model messenger_messages {
 }
 
 model pm {
-  id           Int    @id @default(autoincrement())
-  nom_pm       String @db.VarChar(255)
-  latitude_pm  String @db.VarChar(255)
-  longitude_pm String @db.VarChar(255)
+  id             Int     @id @default(autoincrement())
+  nom_pm         String  @db.VarChar(255)
+  latitude_pm    String  @db.VarChar(255)
+  longitude_pm   String  @db.VarChar(255)
+  fcm_token_user String? @db.VarChar(255)
 }
 
 model roles {
@@ -148,6 +149,7 @@ model routing {
   date_debut_routing  DateTime  @db.DateTime(0)
   date_fin_routing    DateTime  @db.DateTime(0)
   pm_routing          String    @db.LongText
+  created_at          DateTime  @db.DateTime(0)
   routine             routine[]
   agent               agent     @relation(fields: [agent_routing_id], references: [id], onUpdate: Restrict, map: "FK_A5F8B9FA29358D43")
   bdm                 bdm       @relation(fields: [bdm_routing_id], references: [id], onUpdate: Restrict, map: "FK_A5F8B9FA9400F2B5")
@@ -209,14 +211,15 @@ model type_agent {
 }
 
 model users {
-  id             Int     @id @default(autoincrement())
-  agent_user_id  Int     @unique(map: "UNIQ_1483A5E9753DB13F")
-  role_user_id   Int
-  username_user  String  @db.VarChar(255)
-  password_user  String  @db.VarChar(255)
-  fcm_token_user String? @db.VarChar(255)
-  roles          roles   @relation(fields: [role_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E91BA3766E")
-  agent          agent   @relation(fields: [agent_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E9753DB13F")
+  id                 Int     @id @default(autoincrement())
+  agent_user_id      Int     @unique(map: "UNIQ_1483A5E9753DB13F")
+  role_user_id       Int
+  username_user      String  @db.VarChar(255)
+  password_user      String  @db.VarChar(255)
+  fcm_token_user     String? @db.VarChar(255)
+  image_profile_user String? @db.VarChar(255)
+  roles              roles   @relation(fields: [role_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E91BA3766E")
+  agent              agent   @relation(fields: [agent_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E9753DB13F")
 
   @@index([role_user_id], map: "IDX_1483A5E91BA3766E")
 }

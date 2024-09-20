@@ -20,7 +20,7 @@ router.post("/getAllRoutinesByBdm",[],controllers.getAllRoutinesByBdm)
 router.get("/getAllMerchants",[],controllers.getAllMerchants)
 router.post("/updateMerchant",[],controllers.updateMerchant)
 router.post("/profile",[],controllers.getProfile)
-router.post("/infosByBdm",[],controllers.getRoutineInfos)
+router.post("/getRoutineInfos",[],controllers.getRoutineInfos)
 router.post("/getRoutineInfosByDateRange",[],controllers.getRoutineInfosByDateRange)
 
 

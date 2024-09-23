@@ -1199,6 +1199,13 @@ const getRoutineInfos = async (req, res) => {
     try {
         const { bdmId } = req.body;
 
+        // Récupérer tous les agents qui peuvent être associés à des routings
+        const agents = await prisma.agent.findMany({
+            include: {
+                users: true
+            }
+        });
+
         // Récupérer les routings avec les agents associés
         const routingByAgent = await prisma.routing.findMany({
             include: {
@@ -1244,10 +1251,13 @@ const getRoutineInfos = async (req, res) => {
         const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
         const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
 
-        // Mapper les données pour préparer la réponse
-        const routineInfos = Object.values(groupedByAgent).map(agentGroup => {
-            const agent = agentGroup.agent;
+        // Mapper les données pour préparer la réponse, y compris les agents sans routings
+        const routineInfos = agents.map(agent => {
+            const agentId = agent.id;
             const agentFullName = `${agent.prenom_agent} ${agent.nom_agent}`;
+
+            // Obtenir les routings pour cet agent ou une liste vide s'il n'y en a pas
+            const agentGroup = groupedByAgent[agentId] || { routings: [] };
 
             // Tous les routings pour l'agent
             const todayRoutings = agentGroup.routings.filter(routing => {
@@ -1294,6 +1304,7 @@ const getRoutineInfos = async (req, res) => {
     }
 };
 
+
 const getRoutineInfosByDateRange = async (req, res) => {
     try {
         const { bdmId, startDate, endDate } = req.body;
@@ -1301,6 +1312,13 @@ const getRoutineInfosByDateRange = async (req, res) => {
         // Vérification des dates
         const start = new Date(new Date(startDate).setHours(0, 0, 0, 0));
         const end = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+
+        // Récupérer tous les agents qui peuvent être associés à des routings
+        const agents = await prisma.agent.findMany({
+            include: {
+                users: true
+            }
+        });
 
         // Récupérer les routings avec les agents associés dans la période donnée
         const routingByAgent = await prisma.routing.findMany({
@@ -1344,10 +1362,13 @@ const getRoutineInfosByDateRange = async (req, res) => {
             return acc;
         }, {});
 
-        // Mapper les données pour préparer la réponse
-        const routineInfos = Object.values(groupedByAgent).map(agentGroup => {
-            const agent = agentGroup.agent;
+        // Mapper les données pour préparer la réponse, y compris les agents sans routings
+        const routineInfos = agents.map(agent => {
+            const agentId = agent.id;
             const agentFullName = `${agent.prenom_agent} ${agent.nom_agent}`;
+
+            // Obtenir les routings pour cet agent ou une liste vide s'il n'y en a pas
+            const agentGroup = groupedByAgent[agentId] || { routings: [] };
 
             // Tous les routings pour l'agent dans l'intervalle de dates
             const dateFilteredRoutings = agentGroup.routings.filter(routing => {

@@ -11,13 +11,13 @@ model agent {
   id                                                       Int              @id @default(autoincrement())
   type_agent_id                                            Int
   zone_commerciale_id                                      Int
-  responsable_agent_id                                     Int
+  responsable_agent_id                                     Int?
   nom_agent                                                String           @db.VarChar(255)
   prenom_agent                                             String           @db.VarChar(255)
   email_pro_agent                                          String           @db.VarChar(255)
   numero_telephone_agent                                   String           @db.VarChar(255)
   code_authorisation_agent                                 String?          @db.VarChar(255)
-  bdm_agent_responsable_agent_idTobdm                      bdm              @relation("agent_responsable_agent_idTobdm", fields: [responsable_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D10BC1D11")
+  bdm_agent_responsable_agent_idTobdm                      bdm?             @relation("agent_responsable_agent_idTobdm", fields: [responsable_agent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_268B9C9D10BC1D11")
   zone_commerciale                                         zone_commerciale @relation(fields: [zone_commerciale_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D326E035A")
   type_agent                                               type_agent       @relation(fields: [type_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9DF9EB56F7")
   bdm_bdm_agent_bdm_idToagent                              bdm?             @relation("bdm_agent_bdm_idToagent")
@@ -149,7 +149,7 @@ model routing {
   date_debut_routing  DateTime  @db.DateTime(0)
   date_fin_routing    DateTime  @db.DateTime(0)
   pm_routing          String    @db.LongText
-  created_at          DateTime  @db.DateTime(0)
+  created_at          DateTime? @db.DateTime(0)
   routine             routine[]
   agent               agent     @relation(fields: [agent_routing_id], references: [id], onUpdate: Restrict, map: "FK_A5F8B9FA29358D43")
   bdm                 bdm       @relation(fields: [bdm_routing_id], references: [id], onUpdate: Restrict, map: "FK_A5F8B9FA9400F2B5")

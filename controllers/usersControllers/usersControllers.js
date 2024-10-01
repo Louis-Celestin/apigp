@@ -125,7 +125,6 @@ const login = async (req, res, next) => {
         where: { agent_bdm_id: Number(user.agent_user_id) },
         select: { id: true },
       });
-
       if (bdm.length) {
         bdmId = bdm[0].id;
       } else {
@@ -136,7 +135,7 @@ const login = async (req, res, next) => {
     // Créer un token JWT
     const token = Jwt.sign({ iduser: user.id }, "SECRETKEY", { expiresIn: "1h" });
     user.password_user = undefined;
-    user.agent = undefined;
+    // user.agent = undefined;
     user.token = token;
 
     // Inclure globalVariable dans la réponse
@@ -156,6 +155,10 @@ const updateFcmUserToken = async(req,res)=>{
 
     const userId = req.body.userId
     const fcmToken = req.body.fcmToken
+
+    console.log(userId)
+    console.log(fcmToken)
+
     if(!userId || !fcmToken){
       return res.status(400).json({message:"Tous les champs sont obligatoires"})
     }

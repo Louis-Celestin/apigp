@@ -1,11 +1,16 @@
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
 // Initialize Firebase Admin
+
+const serviceAccountPath = path.join(__dirname, 'gp-notify-firebase-adminsdk-tw3s4-c90de640b8.json');
+
 if (!admin.apps.length) {
+    const serviceAccount = require(serviceAccountPath);
+
     admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        // Or use your service account key
-        // credential: admin.credential.cert('path/to/serviceAccountKey.json')
+      credential: admin.credential.cert(serviceAccount),
     });
 }
 

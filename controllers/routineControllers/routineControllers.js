@@ -17,6 +17,8 @@ const unlink = promisify(fs.unlink);
 
 
 
+
+
 // const makeRoutine = async (req, res) => {
 //     try {
 //         const { commercialId, pointMarchand, veilleConcurrentielle, tpeList, latitudeReel, longitudeReel, routing_id, commentaire_routine } = req.body;
@@ -646,7 +648,6 @@ const createRouting = async(req,res)=>{
     const date_debut_routing = req.body.date_debut_routing;
     const date_fin_routing = req.body.date_fin_routing;
     const pm_routing = req.body.pm_routing;
-    const deveiceToken = req.body.deveiceToken;
 
     if(!bdmId || !agentId || !description_routing || !date_debut_routing || !date_fin_routing || !pm_routing){
         return res.status(400).json({message : "Veuillez remplir tous les champs"})
@@ -690,11 +691,22 @@ const createRouting = async(req,res)=>{
                                           }).catch(err=>{
                                             console.log("Erreur"+err)
                                           })
-                                        //   try {
-                                        //      sendNotification(deveiceToken,agentwha[0].nom_agent,pm_routing,`${bdm[0].nom_bdm} ${bdm[0].prenom_bdm}`)
-                                        //   } catch (error) {
-                                        //     console.log(error)
-                                        //   }
+                                          try {
+                                             prisma.users.findMany({
+                                                where:{agent_user_id : Number(agentwha[0].id)}
+                                              }).then((userNotif)=>{
+                                                sendNotification(userNotif[0].fcm_token_user,`${agentwha[0].nom_agent} ${agentwha[0].prenom_agent}`,pm_routing,`${bdm[0].nom_bdm} ${bdm[0].prenom_bdm}`).then((sent)=>{
+                                                    if(sent.length){
+                                                        console.log("Notif envoyée")
+                                                    }else{
+                                                        console.log('Notif non envoyée')
+                                                    }
+                                                })
+                                              })
+                                              
+                                          } catch (error) {
+                                            console.log(error)
+                                          }
                                         return res.status(200).json({message : "Routing créé avec succès"})
                                     }else{
                                         console.log("RAMBA")
@@ -956,7 +968,6 @@ const getPms = async (req, res) => {
     }
 };
 
-
 const getAllRoutinesByBdm = async (req, res) => {
     const bdmId = Number(req.body.bdmId);  // Assurez-vous que bdmId est passé comme paramètre de la requête
     console.log(bdmId);
@@ -997,7 +1008,6 @@ SELECT * FROM routine INNER JOIN agent ON routine.commercial_routine_id = agent.
     }
 };
 
-
 const getAllMerchants = async (req, res) => {
     const SOFTPOS = "SOFTPOS";
 
@@ -1033,7 +1043,6 @@ const getAllMerchants = async (req, res) => {
         return res.status(500).json({ message: "Une erreur s'est produite lors de la recherche des PM" });
     }
 };
-
 
 const updateMerchant = async (req, res) => {
     const { latitude, longitude, pm } = req.body;
@@ -1086,7 +1095,6 @@ const getProfile = async (req,res)=>{
         return res.status(200).json(agent)
     }
 }
-
 
 // const getRoutineInfos = async (req, res) => {
 //     try {
@@ -1195,7 +1203,7 @@ const getProfile = async (req,res)=>{
 //     }
 // };
 
-const getRoutineInfos = async (req, res) => {
+const getRoutineInfos = async (req, res, sendRoutineUpdates) => {
     try {
         const { bdmId } = req.body;
 
@@ -1297,15 +1305,17 @@ const getRoutineInfos = async (req, res) => {
         });
 
         // Envoyer la réponse avec les informations des routines
-        return res.status(200).json(routineInfos);
+        res.status(200).json(routineInfos);
+        sendRoutineUpdates(routineInfos);
     } catch (error) {
-        console.error("Erreur dans la récupération des infos de routine :", error);
-        return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines" });
+        console.error("Erreur dans la récupération des infos de routine avec dates :", error);
+        if (!res.headersSent) {
+            return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines avec dates" });
+        }
     }
 };
 
-
-const getRoutineInfosByDateRange = async (req, res) => {
+const getRoutineInfosByDateRange = async (req, res,sendRoutineUpdates) => {
     try {
         const { bdmId, startDate, endDate } = req.body;
 
@@ -1411,13 +1421,73 @@ const getRoutineInfosByDateRange = async (req, res) => {
         return res.status(200).json(routineInfos);
     } catch (error) {
         console.error("Erreur dans la récupération des infos de routine avec dates :", error);
-        return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines avec dates" });
+        if (!res.headersSent) {
+            return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines avec dates" });
+        }
+    }
+};
+
+const allRoutings = async (req, res) => {
+    console.log("Voici la variable reçue : " + req.body.agentTypeid);
+    const typeAgentId = req.body.agentTypeid;
+    console.log(typeof req.body.agentTypeid);
+
+    if (!typeAgentId) {
+        return res.status(400).json({ message: "Veuillez fournir votre identité" });
+    }
+
+    if (typeAgentId !== 9) {
+        return res.status(400).json({ message: "Vous devez être le directeur commercial pour avoir accès à cette ressource" });
+    }
+
+    try {
+        const routings = await prisma.routing.findMany({ include: { bdm: true } });
+
+        if (routings.length > 0) {
+            return res.status(200).json({ routings });
+        } else {
+            return res.status(400).json({ message: "Aucune donnée" });
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération des routings :", error);
+        return res.status(500).json({ message: "Erreur lors du traitement de la requête" });
+    }
+};
+
+const allRoutines = async (req, res) => {
+    console.log("Voici la variable reçue : " + req.body.agentTypeid);
+    const typeAgentId = req.body.agentTypeid;
+    console.log(typeof req.body.agentTypeid);
+
+    if (!typeAgentId) {
+        return res.status(400).json({ message: "Veuillez fournir votre identité" });
+    }
+
+    if (typeAgentId !== 9) {
+        return res.status(400).json({ message: "Vous devez être le directeur commercial pour avoir accès à cette ressource" });
+    }
+
+    try {
+        const routines = await prisma.routine.findMany({ include: { agent: true ,tpe_routine :true}});
+
+        if (routines.length > 0) {
+            return res.status(200).json({ routines });
+        } else {
+            return res.status(400).json({ message: "Aucune donnée" });
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération des routines :", error);
+        return res.status(500).json({ message: "Erreur lors du traitement de la requête" });
     }
 };
 
 
 
 
-module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm, getAllMerchants, getProfile,updateMerchant,getRoutineInfos,getRoutineInfosByDateRange};
+
+
+
+
+module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm, getAllMerchants, getProfile,updateMerchant,getRoutineInfos,getRoutineInfosByDateRange,allRoutines,allRoutings};
 
 

@@ -1,57 +1,59 @@
 const http = require('http');
 const express = require("express");
 const swaggerUi = require('swagger-ui-express');
-const fs = require("fs")
-const YAML = require('yaml')
+const fs = require("fs");
+const YAML = require('yaml');
+const WebSocket = require('ws');
 
-const file  = fs.readFileSync('./swagger.yaml', 'utf8')
-const swaggerDocument = YAML.parse(file)
+// Charger le fichier Swagger
+const file  = fs.readFileSync('./swagger.yaml', 'utf8');
+const swaggerDocument = YAML.parse(file);
 
 // ROUTES
-const usersRoutes = require('./routes/usersRoutes/usersRoutes')
-const livraisonRoutes = require("./routes/livraisonRoutes/livraisonRoutes")
-const deploiementRoutes = require("./routes/deploiementRoutes/deploiementRoutes")
-const routinesRoutes = require("./routes/routineRoutes/routinesRoutes")
-const pmRoutes = require("./routes/pmRoutes/pmRoutes")
+const usersRoutes = require('./routes/usersRoutes/usersRoutes');
+// const livraisonRoutes = require("./routes/livraisonRoutes/livraisonRoutes");
+// const deploiementRoutes = require("./routes/deploiementRoutes/deploiementRoutes");
+// const pmRoutes = require("./routes/pmRoutes/pmRoutes");
+
 const cors = require('cors');
 
-
-
-const app = express()
-app.use(express.json( {
-  limit : '900mb'
+const app = express();
+app.use(express.json({
+  limit: '900mb'
 }));
 app.use(express.urlencoded({
   extended: true,
-  limit : '900mb'
+  limit: '900mb'
 }));
 
-
-
-app.use(cors())
+app.use(cors());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-app.use('/api',usersRoutes)
-// app.use('/api',livraisonRoutes)
-// app.use('/api',deploiementRoutes)
-app.use('/api',routinesRoutes)
-app.use('/api',pmRoutes) 
+app.use('/api', usersRoutes);
+// app.use('/api', livraisonRoutes);
+// app.use('/api', deploiementRoutes);
+// app.use('/api', pmRoutes);
 
+// Définir et configurer le serveur HTTP
+const server = http.createServer(app);
 
-const normalizePort = val => {
-  const port = parseInt(val, 10);
+// Configurer WebSocket
+const wss = new WebSocket.Server({ server });
 
-  if (isNaN(port)) {
-    return val;
-  }
-  if (port >= 0) {
-    return port;
-  }
-  return false;
+// Fonction pour envoyer les mises à jour en temps réel
+const sendRoutineUpdates = (data) => {
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));  // Envoie des données à tous les clients WebSocket connectés
+    }
+  });
 };
-const port = normalizePort(process.env.PORT ||3000);
-app.set('port', port);
 
+// Inclure les routes routines avec la fonction sendRoutineUpdates
+const routinesRoutes = require("./routes/routineRoutes/routinesRoutes");
+app.use('/api', routinesRoutes(sendRoutineUpdates));
+
+// Gestion des erreurs du serveur
 const errorHandler = error => {
   if (error.syscall !== 'listen') {
     throw error;
@@ -72,7 +74,18 @@ const errorHandler = error => {
   }
 };
 
-const server = http.createServer(app);
+const normalizePort = val => {
+  const port = parseInt(val, 10);
+  if (isNaN(port)) {
+    return val;
+  }
+  if (port >= 0) {
+    return port;
+  }
+  return false;
+};
+const port = normalizePort(process.env.PORT || 3000);
+app.set('port', port);
 
 server.on('error', errorHandler);
 server.on('listening', () => {
@@ -81,5 +94,4 @@ server.on('listening', () => {
   console.log('Listening on ' + bind);
 });
 
-server.listen(port)
-
+server.listen(port);

@@ -6,13 +6,10 @@ const path = require('path');
 
 const serviceAccountPath = path.join(__dirname, 'gp-notify-firebase-adminsdk-tw3s4-c90de640b8.json');
 
-if (!admin.apps.length) {
-    const serviceAccount = require(serviceAccountPath);
 
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-}
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccountPath)
+});
 
 /**
  * Send a notification message using Firebase Cloud Messaging.
@@ -54,5 +51,7 @@ ${bdmName}
         throw error;
     }
 };
+
+// sendNotification("fsQMoaqzQjqBRyGzOfiykE:APA91bGyxmVWOYiZTL0imegoEiZFAYOqcRnFkAYtCBvEWDjojiVPV-u2C6ljiPgbCb4xoY27Um984XXjlqUpeAheS-tARHcvCchRR_ZV84aSf3PfkbKNHg1GAG60345HLW9C6oQ1HSZk","lkjh",[{"pmRouting":"PM"}],"ljdl")
 
 module.exports = { sendNotification };

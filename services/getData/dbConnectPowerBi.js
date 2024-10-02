@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 // Créer un pool de connexions
 const pool1 = mysql.createPool({
-  host: 'mysql-devgp.alwaysdata.net',
+  host: '51.210.248.205',
   user: 'powerbi',
   password: 'powerbi',
   database: 'powerbi_gp',

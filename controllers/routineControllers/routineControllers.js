@@ -1440,18 +1440,7 @@ const allRoutings = async (req, res) => {
         return res.status(400).json({ message: "Vous devez être le directeur commercial pour avoir accès à cette ressource" });
     }
 
-    try {
-        const routings = await prisma.routing.findMany({ include: { bdm: true } });
 
-        if (routings.length > 0) {
-            return res.status(200).json({ routings });
-        } else {
-            return res.status(400).json({ message: "Aucune donnée" });
-        }
-    } catch (error) {
-        console.error("Erreur lors de la récupération des routings :", error);
-        return res.status(500).json({ message: "Erreur lors du traitement de la requête" });
-    }
 };
 
 const allRoutines = async (req, res) => {
@@ -1468,16 +1457,33 @@ const allRoutines = async (req, res) => {
     }
 
     try {
-        const routines = await prisma.routine.findMany({ include: { agent: true ,tpe_routine :true}});
+        // Réessayez la requête jusqu'à 3 fois en cas d'échec
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                const [rows] = await pool2.query(`
+SELECT * FROM routine INNER JOIN agent ON routine.commercial_routine_id = agent.id JOIN tpe_routine ON tpe_routine.routine_id = routine.id JOIN routing ON routing.id = routine.routing_id JOIN bdm ON routing.bdm_routing_id = bdm.id `);
 
-        if (routines.length > 0) {
-            return res.status(200).json({ routines });
-        } else {
-            return res.status(400).json({ message: "Aucune donnée" });
+                if (rows.length > 0) {
+                    return res.status(200).json(rows);
+                } else {
+                    return res.status(404).json({ message: "Aucune donnée trouvée" });
+                }
+            } catch (error) {
+                if (error.code === 'ECONNRESET') {
+                    console.warn('Connexion réinitialisée, tentative de reconnexion...');
+                    retries--;
+                    if (retries === 0) {
+                        throw new Error('Impossible de récupérer les données après plusieurs tentatives');
+                    }
+                } else {
+                    throw error;
+                }
+            }
         }
     } catch (error) {
-        console.error("Erreur lors de la récupération des routines :", error);
-        return res.status(500).json({ message: "Erreur lors du traitement de la requête" });
+        console.error("Erreur lors de la récupération des données:", error);
+        return res.status(500).json({ message: "Erreur serveur" });
     }
 };
 

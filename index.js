@@ -32,7 +32,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/api', usersRoutes);
 // app.use('/api', livraisonRoutes);
 // app.use('/api', deploiementRoutes);
-// app.use('/api', pmRoutes);
+app.use('/api', pmRoutes);
 
 // Définir et configurer le serveur HTTP
 const server = http.createServer(app);

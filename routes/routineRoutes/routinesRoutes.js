@@ -35,5 +35,7 @@ module.exports = (sendRoutineUpdates) => {
         controllers.getRoutineInfosByDateRange(req, res, sendRoutineUpdates);
     });
 
+    
+
     return router;  // Retourner le router configuré
 };

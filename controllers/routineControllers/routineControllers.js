@@ -1316,111 +1316,115 @@ const getProfile = async (req,res)=>{
 // };
 
 
-const getRoutineInfos = async (req, res, sendRoutineUpdates) => {
-    try {
-        const { bdmId } = req.body;
-        if (!bdmId) {
-            return res.status(400).json({ error: "Le bdmId est requis" });
-        }
+// const getRoutineInfos = async (req, res, sendRoutineUpdates) => {
+//     try {
+//         const { bdmId } = req.body;
+//         if (!bdmId) {
+//             return res.status(400).json({ error: "Le bdmId est requis" });
+//         }
 
-        const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
-        const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
+//         const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
+//         const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
 
-        // Étape 1 : Récupérer les routings du jour associés au BDM
-        const routings = await prisma.routing.findMany({
-            where: {
-                bdm_routing_id: Number(bdmId),
-                created_at: {
-                    gte: startOfToday, // Début de la journée
-                    lte: endOfToday // Fin de la journée
-                }
-            },
-            include: {
-                agent: true // Inclure les informations de l'agent
-            }
-        });
+//         // Étape 1 : Récupérer les routings du jour associés au BDM
+//         const routings = await prisma.routing.findMany({
+//             where: {
+//                 bdm_routing_id: Number(bdmId),
+//                 created_at: {
+//                     gte: startOfToday, // Début de la journée
+//                     lte: endOfToday // Fin de la journée
+//                 }
+//             },
+//             include: {
+//                 agent: true // Inclure les informations de l'agent
+//             }
+//         });
 
-        // Étape 2 : Récupérer toutes les routines effectuées aujourd'hui pour tous les agents associés au BDM
-        const routines = await prisma.routine.findMany({
-            where: {
-                date_routine: {
-                    gte: startOfToday,
-                    lte: endOfToday
-                }
-            },
-            include: {
-                agent: true
-            }
-        });
+//         console.log(routings)
 
-        // Étape 3 : Calculer les points marchands pour chaque routing
-        const routingWithPoints = routings.map(routing => {
-            let pointsMarchands = 0;
-            try {
-                pointsMarchands = routing.pm_routing ? JSON.parse(routing.pm_routing).length : 0;
-            } catch (error) {
-                console.error(`Erreur lors du parsing des points marchands pour le routing ID ${routing.id}:`, error);
-            }
-            return {
-                ...routing,
-                pointsMarchands
-            };
-        });
+//         // Étape 2 : Récupérer toutes les routines effectuées aujourd'hui pour tous les agents associés au BDM
+//         const routines = await prisma.routine.findMany({
+//             where: {
+//                 date_routine: {
+//                     gte: startOfToday,
+//                     lte: endOfToday
+//                 }
+//             },
+//             include: {
+//                 agent: {select : {responsable_agent_id : Number(bdmId)}}
+//             }
+//         });
 
-        // Étape 4 : Grouper les informations par agent
-        const groupedByAgent = {};
+//         console.log(routines)
 
-        // Grouper les routings par agent
-        routingWithPoints.forEach(routing => {
-            const agentId = routing.agent.id;
-            if (!groupedByAgent[agentId]) {
-                groupedByAgent[agentId] = {
-                    agent: routing.agent,
-                    routingsCount: 0,
-                    totalPointsMarchands: 0,
-                    routinesCount: 0 // On mettra à jour après avec les routines
-                };
-            }
+//         // Étape 3 : Calculer les points marchands pour chaque routing
+//         const routingWithPoints = routings.map(routing => {
+//             let pointsMarchands = 0;
+//             try {
+//                 pointsMarchands = routing.pm_routing ? JSON.parse(routing.pm_routing).length : 0;
+//             } catch (error) {
+//                 console.error(`Erreur lors du parsing des points marchands pour le routing ID ${routing.id}:`, error);
+//             }
+//             return {
+//                 ...routing,
+//                 pointsMarchands
+//             };
+//         });
 
-            // Ajouter les routings et points marchands pour cet agent
-            groupedByAgent[agentId].routingsCount++;
-            groupedByAgent[agentId].totalPointsMarchands += routing.pointsMarchands;
-        });
+//         // Étape 4 : Grouper les informations par agent
+//         const groupedByAgent = {};
 
-        // Ajouter les routines comptées aujourd'hui pour chaque agent
-        routines.forEach(routine => {
-            const agentId = routine.agent.id;
-            if (!groupedByAgent[agentId]) {
-                groupedByAgent[agentId] = {
-                    agent: routine.agent,
-                    routingsCount: 0, // Pas de routings pour cet agent aujourd'hui
-                    totalPointsMarchands: 0, // Pas de points marchands pour cet agent aujourd'hui
-                    routinesCount: 0
-                };
-            }
+//         // Grouper les routings par agent
+//         routingWithPoints.forEach(routing => {
+//             const agentId = routing.agent.id;
+//             if (!groupedByAgent[agentId]) {
+//                 groupedByAgent[agentId] = {
+//                     agent: routing.agent,
+//                     routingsCount: 0,
+//                     totalPointsMarchands: 0,
+//                     routinesCount: 0 // On mettra à jour après avec les routines
+//                 };
+//             }
 
-            // Ajouter les routines faites aujourd'hui pour cet agent
-            groupedByAgent[agentId].routinesCount++;
-        });
+//             // Ajouter les routings et points marchands pour cet agent
+//             groupedByAgent[agentId].routingsCount++;
+//             groupedByAgent[agentId].totalPointsMarchands += routing.pointsMarchands;
+//         });
 
-        // Étape 5 : Mapper les résultats sous la forme souhaitée
-        const routineInfos = Object.values(groupedByAgent).map(group => ({
-            agent: `${group.agent.prenom_agent} ${group.agent.nom_agent}`, // Nom complet de l'agent
-            routingsCount: group.routingsCount, // Nombre de routings assignés aujourd'hui
-            totalPointsMarchands: group.totalPointsMarchands, // Nombre total de points marchands
-            routinesCount: group.routinesCount // Nombre de routines effectuées aujourd'hui
-        }));
+//         // Ajouter les routines comptées aujourd'hui pour chaque agent
+//         routines.forEach(routine => {
+//             const agentId = routine.agent.id;
+//             if (!groupedByAgent[agentId]) {
+//                 groupedByAgent[agentId] = {
+//                     agent: routine.agent,
+//                     routingsCount: 0, // Pas de routings pour cet agent aujourd'hui
+//                     totalPointsMarchands: 0, // Pas de points marchands pour cet agent aujourd'hui
+//                     routinesCount: 0
+//                 };
+//             }
 
-        // Envoyer la réponse avec les informations des routines
-        res.status(200).json(routineInfos);
-        sendRoutineUpdates(routineInfos);
-    } catch (error) {
-        console.error("Erreur dans la récupération des infos de routine avec dates :", error);
-        if (!res.headersSent) {
-            return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines avec dates" });
-        }
-    }
-};
+//             // Ajouter les routines faites aujourd'hui pour cet agent
+//             groupedByAgent[agentId].routinesCount++;
+//         });
+
+//         // Étape 5 : Mapper les résultats sous la forme souhaitée
+//         const routineInfos = Object.values(groupedByAgent).map(group => ({
+//             agent: `${group.agent.prenom_agent} ${group.agent.nom_agent}`, // Nom complet de l'agent
+//             routingsCount: group.routingsCount, // Nombre de routings assignés aujourd'hui
+//             totalPointsMarchands: group.totalPointsMarchands, // Nombre total de points marchands
+//             routinesCount: group.routinesCount // Nombre de routines effectuées aujourd'hui
+//         }));
+
+//         // Envoyer la réponse avec les informations des routines
+//         res.status(200).json(routineInfos);
+//         sendRoutineUpdates(routineInfos);
+//     } catch (error) {
+//         console.error("Erreur dans la récupération des infos de routine avec dates :", error);
+//         if (!res.headersSent) {
+//             return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines avec dates" });
+//         }
+//     }
+// };
 
 
 
@@ -1538,6 +1542,331 @@ const getRoutineInfos = async (req, res, sendRoutineUpdates) => {
 // };
 
 
+const getRoutineInfos = async (req, res, sendRoutineUpdates) => {
+    try {
+        const { bdmId } = req.body;
+        if (!bdmId) {
+            return res.status(400).json({ error: "Le bdmId est requis" });
+        }
+
+        const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
+        const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
+
+        // Récupérer les routings
+        const routings = await prisma.routing.findMany({
+            where: {
+                bdm_routing_id: Number(bdmId),
+                created_at: {
+                    gte: startOfToday,
+                    lte: endOfToday
+                }
+            },
+            include: {
+                agent: true
+            }
+        });
+
+        // Récupérer les routines
+        const routines = await prisma.routine.findMany({
+            where: {
+                date_routine: {
+                    gte: startOfToday,
+                    lte: endOfToday
+                },
+                agent: {
+                    responsable_agent_id: Number(bdmId)
+                }
+            },
+            include: {
+                agent: true
+            }
+        });
+
+        // Calculer les points marchands
+        const routingWithPoints = routings.map(routing => {
+            let pointsMarchands = 0;
+            try {
+                pointsMarchands = routing.pm_routing ? JSON.parse(routing.pm_routing).length : 0;
+            } catch (error) {
+                console.error(`Erreur lors du parsing des points marchands pour le routing ID ${routing.id}:`, error);
+            }
+            return {
+                ...routing,
+                pointsMarchands
+            };
+        });
+
+        // Grouper par agent
+        const groupedByAgent = {};
+
+        routingWithPoints.forEach(routing => {
+            const agentId = routing.agent.id;
+            if (!groupedByAgent[agentId]) {
+                groupedByAgent[agentId] = {
+                    agent: routing.agent,
+                    routingsCount: 0,
+                    totalPointsMarchands: 0,
+                    routinesCount: 0
+                };
+            }
+            groupedByAgent[agentId].routingsCount++;
+            groupedByAgent[agentId].totalPointsMarchands += routing.pointsMarchands;
+        });
+
+        routines.forEach(routine => {
+            const agentId = routine.agent.id;
+            if (!groupedByAgent[agentId]) {
+                groupedByAgent[agentId] = {
+                    agent: routine.agent,
+                    routingsCount: 0,
+                    totalPointsMarchands: 0,
+                    routinesCount: 0
+                };
+            }
+            groupedByAgent[agentId].routinesCount++;
+        });
+
+        const routineInfos = Object.values(groupedByAgent).map(group => ({
+            agent: `${group.agent.prenom_agent} ${group.agent.nom_agent}`,
+            routingsCount: group.routingsCount,
+            totalPointsMarchands: group.totalPointsMarchands,
+            routinesCount: group.routinesCount
+        }));
+
+        res.status(200).json(routineInfos);
+        sendRoutineUpdates(routineInfos);
+    } catch (error) {
+        console.error("Erreur dans la récupération des infos de routine :", error);
+        if (!res.headersSent) {
+            return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines." });
+        }
+    }
+};
+
+
+// const getRoutineInfosByDateRange = async (req, res, sendRoutineUpdates) => {
+//     try {
+//         const { bdmId, startDate, endDate } = req.body;
+
+//         if (!bdmId) {
+//             return res.status(400).json({ error: "Le bdmId est requis" });
+//         }
+
+//         // Vérification et conversion des dates au format YYYY-MM-DD
+//         const startOfToday = new Date(`${startDate}T00:00:00Z`);
+//         const endOfToday = new Date(`${endDate}T23:59:59Z`);
+
+//         // Validation des dates
+//         if (isNaN(startOfToday.getTime()) || isNaN(endOfToday.getTime())) {
+//             return res.status(400).json({ error: "Les dates fournies ne sont pas valides." });
+//         }
+
+//         // Étape 1 : Récupérer les routings entre dateDebut et dateFin associés au BDM
+//         const routings = await prisma.routing.findMany({
+//             where: {
+//                 bdm_routing_id: Number(bdmId),
+//                 created_at: {
+//                     gte: startOfToday, // Début de la période
+//                     lte: endOfToday // Fin de la période
+//                 }
+//             },
+//             include: {
+//                 agent: true // Inclure les informations de l'agent
+//             }
+//         });
+
+//         // Étape 2 : Récupérer toutes les routines effectuées entre dateDebut et dateFin pour tous les agents associés au BDM
+//         const routines = await prisma.routine.findMany({
+//             where: {
+//                 date_routine: {
+//                     gte: startOfToday,
+//                     lte: endOfToday
+//                 }
+//             },
+//             include: {
+//                 agent: true
+//             }
+//         });
+
+//         // Étape 3 : Calculer les points marchands pour chaque routing
+//         const routingWithPoints = routings.map(routing => {
+//             let pointsMarchands = 0;
+//             try {
+//                 pointsMarchands = routing.pm_routing ? JSON.parse(routing.pm_routing).length : 0;
+//             } catch (error) {
+//                 console.error(`Erreur lors du parsing des points marchands pour le routing ID ${routing.id}:`, error);
+//             }
+//             return {
+//                 ...routing,
+//                 pointsMarchands
+//             };
+//         });
+
+//         // Étape 4 : Grouper les informations par agent
+//         const groupedByAgent = {};
+
+//         // Grouper les routings par agent
+//         routingWithPoints.forEach(routing => {
+//             const agentId = routing.agent.id;
+//             if (!groupedByAgent[agentId]) {
+//                 groupedByAgent[agentId] = {
+//                     agent: routing.agent,
+//                     routingsCount: 0,
+//                     totalPointsMarchands: 0,
+//                     routinesCount: 0 // On mettra à jour après avec les routines
+//                 };
+//             }
+
+//             // Ajouter les routings et points marchands pour cet agent
+//             groupedByAgent[agentId].routingsCount++;
+//             groupedByAgent[agentId].totalPointsMarchands += routing.pointsMarchands;
+//         });
+
+//         // Ajouter les routines comptées pour chaque agent
+//         routines.forEach(routine => {
+//             const agentId = routine.agent.id;
+//             if (!groupedByAgent[agentId]) {
+//                 groupedByAgent[agentId] = {
+//                     agent: routine.agent,
+//                     routingsCount: 0, // Pas de routings pour cet agent dans cette période
+//                     totalPointsMarchands: 0, // Pas de points marchands pour cet agent dans cette période
+//                     routinesCount: 0
+//                 };
+//             }
+
+//             // Ajouter les routines faites dans cette période pour cet agent
+//             groupedByAgent[agentId].routinesCount++;
+//         });
+
+//         // Étape 5 : Mapper les résultats sous la forme souhaitée
+//         const routineInfos = Object.values(groupedByAgent).map(group => ({
+//             agent: `${group.agent.prenom_agent} ${group.agent.nom_agent}`, // Nom complet de l'agent
+//             routingsCount: group.routingsCount, // Nombre de routings assignés dans la période
+//             totalPointsMarchands: group.totalPointsMarchands, // Nombre total de points marchands
+//             routinesCount: group.routinesCount // Nombre de routines effectuées dans la période
+//         }));
+
+//         // Envoyer la réponse avec les informations des routines
+//         res.status(200).json(routineInfos);
+//         sendRoutineUpdates(routineInfos);
+//     } catch (error) {
+//         console.error("Erreur dans la récupération des infos de routine avec dates :", error);
+//         if (!res.headersSent) {
+//             return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines avec dates" });
+//         }
+//     }
+// };
+
+
+// const getRoutineInfosByDateRange = async (req, res, sendRoutineUpdates) => {
+//     try {
+//         const { bdmId, startDate, endDate } = req.body;
+
+//         if (!bdmId) {
+//             return res.status(400).json({ error: "Le bdmId est requis" });
+//         }
+
+//         // Vérification et conversion des dates au format YYYY-MM-DD
+//         const startOfToday = new Date(`${startDate}T00:00:00Z`);
+//         const endOfToday = new Date(`${endDate}T23:59:59Z`);
+
+//         // Validation des dates
+//         if (isNaN(startOfToday.getTime()) || isNaN(endOfToday.getTime())) {
+//             return res.status(400).json({ error: "Les dates fournies ne sont pas valides." });
+//         }
+
+//         // Récupérer les routings
+//         const routings = await prisma.routing.findMany({
+//             where: {
+//                 bdm_routing_id: Number(bdmId),
+//                 created_at: {
+//                     gte: startOfToday,
+//                     lte: endOfToday
+//                 }
+//             },
+//             include: {
+//                 agent: true
+//             }
+//         });
+
+//         // Récupérer les routines
+//         const routines = await prisma.routine.findMany({
+//             where: {
+//                 date_routine: {
+//                     gte: startOfToday,
+//                     lte: endOfToday
+//                 },
+//                 agent: {
+//                     responsable_agent_id: Number(bdmId) // Filtre pour les agents associés
+//                 }
+//             },
+//             include: {
+//                 agent: true
+//             }
+//         });
+
+//         // Calculer les points marchands
+//         const routingWithPoints = routings.map(routing => {
+//             let pointsMarchands = 0;
+//             try {
+//                 pointsMarchands = routing.pm_routing ? JSON.parse(routing.pm_routing).length : 0;
+//             } catch (error) {
+//                 console.error(`Erreur lors du parsing des points marchands pour le routing ID ${routing.id}:`, error);
+//             }
+//             return {
+//                 ...routing,
+//                 pointsMarchands
+//             };
+//         });
+
+//         // Grouper par agent
+//         const groupedByAgent = {};
+
+//         routingWithPoints.forEach(routing => {
+//             const agentId = routing.agent.id;
+//             if (!groupedByAgent[agentId]) {
+//                 groupedByAgent[agentId] = {
+//                     agent: routing.agent,
+//                     routingsCount: 0,
+//                     totalPointsMarchands: 0,
+//                     routinesCount: 0
+//                 };
+//             }
+//             groupedByAgent[agentId].routingsCount++;
+//             groupedByAgent[agentId].totalPointsMarchands += routing.pointsMarchands;
+//         });
+
+//         routines.forEach(routine => {
+//             const agentId = routine.agent.id;
+//             if (!groupedByAgent[agentId]) {
+//                 groupedByAgent[agentId] = {
+//                     agent: routine.agent,
+//                     routingsCount: 0,
+//                     totalPointsMarchands: 0,
+//                     routinesCount: 0
+//                 };
+//             }
+//             groupedByAgent[agentId].routinesCount++;
+//         });
+
+//         const routineInfos = Object.values(groupedByAgent).map(group => ({
+//             agent: `${group.agent.prenom_agent} ${group.agent.nom_agent}`,
+//             routingsCount: group.routingsCount,
+//             totalPointsMarchands: group.totalPointsMarchands,
+//             routinesCount: group.routinesCount
+//         }));
+
+//         res.status(200).json(routineInfos);
+//         sendRoutineUpdates(routineInfos);
+//     } catch (error) {
+//         console.error("Erreur dans la récupération des infos de routine :", error);
+//         if (!res.headersSent) {
+//             return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines." });
+//         }
+//     }
+// };
+
+
 const getRoutineInfosByDateRange = async (req, res, sendRoutineUpdates) => {
     try {
         const { bdmId, startDate, endDate } = req.body;
@@ -1555,24 +1884,11 @@ const getRoutineInfosByDateRange = async (req, res, sendRoutineUpdates) => {
             return res.status(400).json({ error: "Les dates fournies ne sont pas valides." });
         }
 
-        // Étape 1 : Récupérer les routings entre dateDebut et dateFin associés au BDM
+        // Récupérer les routings
         const routings = await prisma.routing.findMany({
             where: {
                 bdm_routing_id: Number(bdmId),
                 created_at: {
-                    gte: startOfToday, // Début de la période
-                    lte: endOfToday // Fin de la période
-                }
-            },
-            include: {
-                agent: true // Inclure les informations de l'agent
-            }
-        });
-
-        // Étape 2 : Récupérer toutes les routines effectuées entre dateDebut et dateFin pour tous les agents associés au BDM
-        const routines = await prisma.routine.findMany({
-            where: {
-                date_routine: {
                     gte: startOfToday,
                     lte: endOfToday
                 }
@@ -1582,7 +1898,23 @@ const getRoutineInfosByDateRange = async (req, res, sendRoutineUpdates) => {
             }
         });
 
-        // Étape 3 : Calculer les points marchands pour chaque routing
+        // Récupérer les routines en s'assurant que responsable_agent_id et bdm_routing_id soient égaux
+        const routines = await prisma.routine.findMany({
+            where: {
+                date_routine: {
+                    gte: startOfToday,
+                    lte: endOfToday
+                },
+                agent: {
+                    responsable_agent_id: Number(bdmId) // Filtre pour les agents associés
+                }
+            },
+            include: {
+                agent: true
+            }
+        });
+
+        // Calculer les points marchands
         const routingWithPoints = routings.map(routing => {
             let pointsMarchands = 0;
             try {
@@ -1596,10 +1928,9 @@ const getRoutineInfosByDateRange = async (req, res, sendRoutineUpdates) => {
             };
         });
 
-        // Étape 4 : Grouper les informations par agent
+        // Grouper par agent
         const groupedByAgent = {};
 
-        // Grouper les routings par agent
         routingWithPoints.forEach(routing => {
             const agentId = routing.agent.id;
             if (!groupedByAgent[agentId]) {
@@ -1607,50 +1938,42 @@ const getRoutineInfosByDateRange = async (req, res, sendRoutineUpdates) => {
                     agent: routing.agent,
                     routingsCount: 0,
                     totalPointsMarchands: 0,
-                    routinesCount: 0 // On mettra à jour après avec les routines
+                    routinesCount: 0
                 };
             }
-
-            // Ajouter les routings et points marchands pour cet agent
             groupedByAgent[agentId].routingsCount++;
             groupedByAgent[agentId].totalPointsMarchands += routing.pointsMarchands;
         });
 
-        // Ajouter les routines comptées pour chaque agent
         routines.forEach(routine => {
             const agentId = routine.agent.id;
             if (!groupedByAgent[agentId]) {
                 groupedByAgent[agentId] = {
                     agent: routine.agent,
-                    routingsCount: 0, // Pas de routings pour cet agent dans cette période
-                    totalPointsMarchands: 0, // Pas de points marchands pour cet agent dans cette période
+                    routingsCount: 0,
+                    totalPointsMarchands: 0,
                     routinesCount: 0
                 };
             }
-
-            // Ajouter les routines faites dans cette période pour cet agent
             groupedByAgent[agentId].routinesCount++;
         });
 
-        // Étape 5 : Mapper les résultats sous la forme souhaitée
         const routineInfos = Object.values(groupedByAgent).map(group => ({
-            agent: `${group.agent.prenom_agent} ${group.agent.nom_agent}`, // Nom complet de l'agent
-            routingsCount: group.routingsCount, // Nombre de routings assignés dans la période
-            totalPointsMarchands: group.totalPointsMarchands, // Nombre total de points marchands
-            routinesCount: group.routinesCount // Nombre de routines effectuées dans la période
+            agent: `${group.agent.prenom_agent} ${group.agent.nom_agent}`,
+            routingsCount: group.routingsCount,
+            totalPointsMarchands: group.totalPointsMarchands,
+            routinesCount: group.routinesCount
         }));
 
-        // Envoyer la réponse avec les informations des routines
         res.status(200).json(routineInfos);
         sendRoutineUpdates(routineInfos);
     } catch (error) {
-        console.error("Erreur dans la récupération des infos de routine avec dates :", error);
+        console.error("Erreur dans la récupération des infos de routine :", error);
         if (!res.headersSent) {
-            return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines avec dates" });
+            return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines." });
         }
     }
 };
-
 
 
 
@@ -1950,14 +2273,6 @@ const getRoutineInfosForDC = async (req, res, sendRoutineUpdates) => {
         }
     }
 };
-
-
-
-
-
-
-
-
 
 
 

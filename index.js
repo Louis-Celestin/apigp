@@ -13,7 +13,7 @@ const swaggerDocument = YAML.parse(file);
 const usersRoutes = require('./routes/usersRoutes/usersRoutes');
 // const livraisonRoutes = require("./routes/livraisonRoutes/livraisonRoutes");
 // const deploiementRoutes = require("./routes/deploiementRoutes/deploiementRoutes");
-// const pmRoutes = require("./routes/pmRoutes/pmRoutes");
+const pmRoutes = require("./routes/pmRoutes/pmRoutes");
 
 const cors = require('cors');
 

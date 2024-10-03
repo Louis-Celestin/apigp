@@ -1439,8 +1439,17 @@ const allRoutings = async (req, res) => {
     if (typeAgentId !== 9) {
         return res.status(400).json({ message: "Vous devez être le directeur commercial pour avoir accès à cette ressource" });
     }
-
-
+    await prisma.routing.findMany({
+        include:{bdm:true}
+    }).then((routings)=>{
+        if(routings.length){
+            return res.status(200).json({routings})
+        }else{
+            return res.status(400).json({message:"Aucune donnée"})
+        }
+    }).catch(err=>{
+        console.log(err)
+    })
 };
 
 const allRoutines = async (req, res) => {

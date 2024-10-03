@@ -1851,25 +1851,12 @@ SELECT * FROM routine INNER JOIN agent ON routine.commercial_routine_id = agent.
 
 
 const getRoutineInfosForDC = async (req, res, sendRoutineUpdates) => {
-    const agentTypeId = req.body.agentTypeId;
-
-    // Vérification du champ agentTypeId
-    if (!agentTypeId) {
-        return res.status(400).json({ message: "Veuillez remplir tous les champs" });
-    }
-
-    // Vérification du type d'agent
-    if (agentTypeId !== 9) {
-        return res.status(403).json({ message: "Vous n'avez pas le droit d'accéder à cette ressource" });
-    }
-
     try {
-
-
+        // Début et fin de la journée
         const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
         const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
 
-        // Étape 1 : Récupérer les routings du jour associés au BDM
+        // Étape 1 : Récupérer tous les routings du jour
         const routings = await prisma.routing.findMany({
             where: {
                 created_at: {
@@ -1882,7 +1869,7 @@ const getRoutineInfosForDC = async (req, res, sendRoutineUpdates) => {
             }
         });
 
-        // Étape 2 : Récupérer toutes les routines effectuées aujourd'hui pour tous les agents associés au BDM
+        // Étape 2 : Récupérer toutes les routines effectuées aujourd'hui
         const routines = await prisma.routine.findMany({
             where: {
                 date_routine: {
@@ -1957,12 +1944,16 @@ const getRoutineInfosForDC = async (req, res, sendRoutineUpdates) => {
         res.status(200).json(routineInfos);
         sendRoutineUpdates(routineInfos);
     } catch (error) {
-        console.error("Erreur dans la récupération des infos de routine avec dates :", error);
+        console.error("Erreur dans la récupération des infos de routine :", error);
         if (!res.headersSent) {
-            return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines avec dates" });
+            return res.status(500).json({ error: "Une erreur s'est produite lors de la récupération des routines" });
         }
     }
 };
+
+
+
+
 
 
 

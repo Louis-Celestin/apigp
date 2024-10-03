@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const controllers = require("../../controllers/routineControllers/routineControllers");
-const middlewares = require("../../middlewares/routinesMiddlewares/routinesMiddlewares");
+// const middlewares = require("../../middlewares/routinesMiddlewares/routinesMiddlewares");
 
 // Définir les autres routes normalement
 router.post("/makeRoutine", [], controllers.makeRoutine);
@@ -35,7 +35,9 @@ module.exports = (sendRoutineUpdates) => {
         controllers.getRoutineInfosByDateRange(req, res, sendRoutineUpdates);
     });
 
-    
+    router.post('/getRoutineInfosForDc', (req, res) => {
+        controllers.getRoutineInfosForDC(req, res, sendRoutineUpdates);
+    });
 
     return router;  // Retourner le router configuré
 };

@@ -49,6 +49,7 @@ const sendRoutineUpdates = (data) => {
   });
 };
 
+
 // Inclure les routes routines avec la fonction sendRoutineUpdates
 const routinesRoutes = require("./routes/routineRoutes/routinesRoutes");
 app.use('/api', routinesRoutes(sendRoutineUpdates));

@@ -1516,6 +1516,8 @@ const getRoutineInfosForDC = async (req, res, sendRoutineUpdates) => {
         const agents = await prisma.agent.findMany({
             include: {
                 users: true
+            },where:{
+                type_agent_id :{notIn:[9,8]}
             }
         });
 
@@ -1533,6 +1535,7 @@ const getRoutineInfosForDC = async (req, res, sendRoutineUpdates) => {
                 }
             },
             where: {
+                
                 created_at: {
                     gte: new Date(new Date().setHours(0, 0, 0, 0)), // Début de la journée
                     lte: new Date(new Date().setHours(23, 59, 59, 999)) // Fin de la journée

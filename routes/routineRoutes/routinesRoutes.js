@@ -39,5 +39,9 @@ module.exports = (sendRoutineUpdates) => {
         controllers.getRoutineInfosForDC(req, res, sendRoutineUpdates);
     });
 
+    router.post('/getRoutineInfosForDcByCommercial', (req, res) => {
+        controllers.getRoutineInfosForDcByCommercial(req, res, sendRoutineUpdates);
+    });
+
     return router;  // Retourner le router configuré
 };

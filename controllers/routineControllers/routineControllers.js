@@ -1106,7 +1106,7 @@ const getRoutineInfosForDC = async (req, res, sendRoutineUpdates) => {
 };
 
 const getRoutineInfosForDcByCommercial = async (req, res, sendRoutineUpdates) => {
-    const { idCommercial } = req.params;
+    const { idCommercial } = req.body;
 
     try {
         if (!idCommercial) {

@@ -1,9 +1,9 @@
 const mysql = require('mysql2/promise');
 // Créer un pool de connexions
 const pool2 = mysql.createPool({
-  host: 'mysql-devgp.alwaysdata.net',
+  host: '51.75.95.225',
   user: 'devgp_root',
-  password: 'P@sswordAa2024',
+  password: 'P@sswordGpRouting2024',
   database: 'devgp_deploiement',
   waitForConnections: true,
   connectionLimit: 10,

@@ -17,9 +17,9 @@ model agent {
   email_pro_agent                                          String           @db.VarChar(255)
   numero_telephone_agent                                   String           @db.VarChar(255)
   code_authorisation_agent                                 String?          @db.VarChar(255)
-  bdm_agent_responsable_agent_idTobdm                      bdm?             @relation("agent_responsable_agent_idTobdm", fields: [responsable_agent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_268B9C9D10BC1D11")
-  zone_commerciale                                         zone_commerciale @relation(fields: [zone_commerciale_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9D326E035A")
-  type_agent                                               type_agent       @relation(fields: [type_agent_id], references: [id], onUpdate: Restrict, map: "FK_268B9C9DF9EB56F7")
+  bdm_agent_responsable_agent_idTobdm                      bdm?             @relation("agent_responsable_agent_idTobdm", fields: [responsable_agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_268B9C9D10BC1D11")
+  zone_commerciale                                         zone_commerciale @relation(fields: [zone_commerciale_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_268B9C9D326E035A")
+  type_agent                                               type_agent       @relation(fields: [type_agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_268B9C9DF9EB56F7")
   bdm_bdm_agent_bdm_idToagent                              bdm?             @relation("bdm_agent_bdm_idToagent")
   deploiement                                              deploiement[]
   livraison_livraison_agent_saisielivraison_idToagent      livraison[]      @relation("livraison_agent_saisielivraison_idToagent")
@@ -42,7 +42,7 @@ model bdm {
   contact_bdm                           String    @db.VarChar(255)
   agent_bdm_id                          Int       @unique(map: "UNIQ_8680751A96E7BAA5")
   agent_agent_responsable_agent_idTobdm agent[]   @relation("agent_responsable_agent_idTobdm")
-  agent_bdm_agent_bdm_idToagent         agent     @relation("bdm_agent_bdm_idToagent", fields: [agent_bdm_id], references: [id], onUpdate: Restrict, map: "FK_8680751A96E7BAA5")
+  agent_bdm_agent_bdm_idToagent         agent     @relation("bdm_agent_bdm_idToagent", fields: [agent_bdm_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_8680751A96E7BAA5")
   routing                               routing[]
 }
 
@@ -58,7 +58,7 @@ model deploiement {
   tpes                           String          @db.VarChar(255)
   date_deploiement               DateTime        @db.DateTime(0)
   numero_deloiement              String          @db.VarChar(255)
-  agent                          agent           @relation(fields: [commercial_deploiement_id], references: [id], onUpdate: Restrict, map: "FK_E332A2F915B08F6F")
+  agent                          agent           @relation(fields: [commercial_deploiement_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_E332A2F915B08F6F")
   tpe_livraison                  tpe_livraison[]
 
   @@index([commercial_deploiement_id], map: "IDX_E332A2F915B08F6F")
@@ -85,8 +85,8 @@ model livraison {
   date_saisie_livraison                                DateTime        @db.DateTime(0)
   datevalidationlivraison                              DateTime        @db.DateTime(0)
   tpes                                                 String          @db.VarChar(255)
-  agent_livraison_agent_saisielivraison_idToagent      agent           @relation("livraison_agent_saisielivraison_idToagent", fields: [agent_saisielivraison_id], references: [id], onUpdate: Restrict, map: "FK_A60C9F1F4E5C379B")
-  agent_livraison_agent_validateur_livraison_idToagent agent?          @relation("livraison_agent_validateur_livraison_idToagent", fields: [agent_validateur_livraison_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_A60C9F1FB333652C")
+  agent_livraison_agent_saisielivraison_idToagent      agent           @relation("livraison_agent_saisielivraison_idToagent", fields: [agent_saisielivraison_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_A60C9F1F4E5C379B")
+  agent_livraison_agent_validateur_livraison_idToagent agent?          @relation("livraison_agent_validateur_livraison_idToagent", fields: [agent_validateur_livraison_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_A60C9F1FB333652C")
   tpe_livraison                                        tpe_livraison[]
 
   @@index([agent_saisielivraison_id], map: "IDX_A60C9F1F4E5C379B")
@@ -132,14 +132,15 @@ model routine {
   veille_concurentielle_routine String        @db.VarChar(255)
   routing_id                    Int
   commentaire_routine           String        @db.VarChar(255)
-  routing                       routing       @relation(fields: [routing_id], references: [id], onUpdate: Restrict, map: "FK_4BF6D8D658735C4C")
-  agent                         agent         @relation(fields: [commercial_routine_id], references: [id], onUpdate: Restrict, map: "FK_4BF6D8D6E8A127CF")
+  routing                       routing       @relation(fields: [routing_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_4BF6D8D658735C4C")
+  agent                         agent         @relation(fields: [commercial_routine_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_4BF6D8D6E8A127CF")
   tpe_routine                   tpe_routine[]
 
   @@index([routing_id], map: "IDX_4BF6D8D658735C4C")
   @@index([commercial_routine_id], map: "IDX_4BF6D8D6E8A127CF")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model routing {
   id                  Int       @id @default(autoincrement())
@@ -151,8 +152,8 @@ model routing {
   pm_routing          String    @db.LongText
   created_at          DateTime? @db.DateTime(0)
   routine             routine[]
-  agent               agent     @relation(fields: [agent_routing_id], references: [id], onUpdate: Restrict, map: "FK_A5F8B9FA29358D43")
-  bdm                 bdm       @relation(fields: [bdm_routing_id], references: [id], onUpdate: Restrict, map: "FK_A5F8B9FA9400F2B5")
+  agent               agent     @relation(fields: [agent_routing_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_A5F8B9FA29358D43")
+  bdm                 bdm       @relation(fields: [bdm_routing_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_A5F8B9FA9400F2B5")
 
   @@index([agent_routing_id], map: "IDX_A5F8B9FA29358D43")
   @@index([bdm_routing_id], map: "IDX_A5F8B9FA9400F2B5")
@@ -178,9 +179,9 @@ model tpe_livraison {
   etat_batterie_tpelivraison         String       @db.VarChar(255)
   etat_puce_tpelivraison             String       @db.VarChar(255)
   deploiement_id                     Int?
-  deploiement                        deploiement? @relation(fields: [deploiement_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_78EABD6A88B20267")
-  livraison                          livraison    @relation(fields: [livraison_id], references: [id], onUpdate: Restrict, map: "FK_78EABD6A8E54FB25")
-  agent                              agent        @relation(fields: [agent_deploiement_tpe_livraison_id], references: [id], onUpdate: Restrict, map: "FK_78EABD6ABC7C8475")
+  deploiement                        deploiement? @relation(fields: [deploiement_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_78EABD6A88B20267")
+  livraison                          livraison    @relation(fields: [livraison_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_78EABD6A8E54FB25")
+  agent                              agent        @relation(fields: [agent_deploiement_tpe_livraison_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_78EABD6ABC7C8475")
 
   @@index([deploiement_id], map: "IDX_78EABD6A88B20267")
   @@index([livraison_id], map: "IDX_78EABD6A8E54FB25")
@@ -199,7 +200,7 @@ model tpe_routine {
   description_probleme_mobile  String? @db.VarChar(255)
   commenttaire_tpe_routine     String  @db.VarChar(255)
   image_tpe_routine            String  @db.VarChar(255)
-  routine                      routine @relation(fields: [routine_id], references: [id], onUpdate: Restrict, map: "FK_9F5D372CF27A94C7")
+  routine                      routine @relation(fields: [routine_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9F5D372CF27A94C7")
 
   @@index([routine_id], map: "IDX_9F5D372CF27A94C7")
 }
@@ -218,8 +219,8 @@ model users {
   password_user      String  @db.VarChar(255)
   fcm_token_user     String? @db.VarChar(255)
   image_profile_user String? @db.VarChar(255)
-  roles              roles   @relation(fields: [role_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E91BA3766E")
-  agent              agent   @relation(fields: [agent_user_id], references: [id], onUpdate: Restrict, map: "FK_1483A5E9753DB13F")
+  roles              roles   @relation(fields: [role_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1483A5E91BA3766E")
+  agent              agent   @relation(fields: [agent_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1483A5E9753DB13F")
 
   @@index([role_user_id], map: "IDX_1483A5E91BA3766E")
 }

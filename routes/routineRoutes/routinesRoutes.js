@@ -41,6 +41,12 @@ module.exports = (sendRoutineUpdates) => {
 
     router.post('/getRoutineInfosForDcByCommercial', (req, res) => {
         controllers.getRoutineInfosForDcByCommercial(req, res, sendRoutineUpdates);
+    });    
+    router.post('/getRoutineInfosForDcByCommercialByDateRange', (req, res) => {
+        controllers.getRoutineInfosForDcByCommercialByDateRange(req, res, sendRoutineUpdates);
+    });    
+    router.post('/getRoutineInfosForDCByDateRange', (req, res) => {
+        controllers.getRoutineInfosForDCByDateRange(req, res, sendRoutineUpdates);
     });
 
     return router;  // Retourner le router configuré

@@ -26,10 +26,10 @@ const trouverPointsMarchandsProches = async (req,res) => {
         // user: 'powerbi',
         // password: 'powerbi',
         // database: 'powerbi_gp'
-        host : "mysql-devgp.alwaysdata.net",
+        host : "51.75.95.225",
         user : "devgp_root",
         database : "devgp_deploiement",
-        password : "P@sswordAa2024",
+        password : "P@sswordGpRouting2024",
     });
 
     console.log(latitudeTelephone, longitudeTelephone)
@@ -43,13 +43,13 @@ const trouverPointsMarchandsProches = async (req,res) => {
     
         rows.forEach(pointMarchand => {
             const distance = calculateDistance(latitudeTelephone, longitudeTelephone, pointMarchand.latitude_pm, pointMarchand.longitude_pm);
-            if (distance <= 5) { // Chercher les points marchands dans un rayon de 5 mètres
+            if (distance <= 20) { // Chercher les points marchands dans un rayon de 20 mètres
                 pointsMarchandsProches.push(pointMarchand);
             }
         });
     
         if (pointsMarchandsProches.length === 0) {
-            return res.status(401).json({ message: 'Aucun point marchand trouvé dans un rayon de 5 mètres' });
+            return res.status(401).json({ message: 'Aucun point marchand trouvé dans un rayon de 20 mètres' });
         } else {
             console.log(pointsMarchandsProches)
             return res.status(200).json(pointsMarchandsProches);

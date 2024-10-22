@@ -16,7 +16,6 @@ const writeFile = promisify(fs.writeFile);
 const unlink = promisify(fs.unlink);
 
 
-
 const makeRoutine = async (req, res) => {
     try {
         const { commercialId, pointMarchand, veilleConcurrentielle, tpeList, latitudeReel, longitudeReel, routing_id, commentaire_routine } = req.body;
@@ -86,7 +85,7 @@ const makeRoutine = async (req, res) => {
 
         // Calcul de la distance et validation
         const distance = calculateDistance(latitudeReel, longitudeReel, Number(results[0].latitude_pm), Number(results[0].longitude_pm));
-        if (distance > 10) {
+        if (distance > 100) {
             return res.status(401).json({ message: "Vous devez être chez le point marchand pour effectuer la visite" });
         }
 
@@ -563,7 +562,7 @@ const getAllRoutinesByBdm = async (req, res) => {
         while (retries > 0) {
             try {
                 const [rows] = await pool2.query(`
-SELECT * FROM routine INNER JOIN agent ON routine.commercial_routine_id = agent.id JOIN tpe_routine ON tpe_routine.routine_id = routine.id JOIN routing ON routing.id = routine.routing_id JOIN bdm ON routing.bdm_routing_id = bdm.id WHERE bdm.id = ? ORDER BY date_routine DESC
+SELECT nom_bdm,prenom_bdm,routine.id,routine_id,commercial_routine_id,numero_routine,date_routine,point_marchand_routine,veille_concurentielle_routine,commentaire_routine,id_terminal_tpe_routine,etat_tpe_routine,etat_chargeur_tpe_routine,probleme_bancaire,description_problemebancaire,probleme_mobile,description_probleme_mobile,commenttaire_tpe_routine,image_tpe_routine,nom_agent,prenom_agent FROM routine INNER JOIN agent ON routine.commercial_routine_id = agent.id JOIN tpe_routine ON tpe_routine.routine_id = routine.id JOIN routing ON routine.routing_id = routing.id JOIN bdm ON routing.bdm_routing_id = bdm.id WHERE bdm.id = ? ORDER BY date_routine DESC
                 `, [bdmId]);
 
                 if (rows.length > 0) {
@@ -744,11 +743,11 @@ const allRoutines = async (req, res) => {
         while (retries > 0) {
             try {
                 const [rows] = await pool2.query(`
-SELECT * FROM routine INNER JOIN agent ON routine.commercial_routine_id = agent.id JOIN tpe_routine ON tpe_routine.routine_id = routine.id ORDER BY date_routine DESC`);
+SELECT routine.id,routine_id,commercial_routine_id,numero_routine,date_routine,point_marchand_routine,veille_concurentielle_routine,commentaire_routine,id_terminal_tpe_routine,etat_tpe_routine,etat_chargeur_tpe_routine,probleme_bancaire,description_problemebancaire,probleme_mobile,description_probleme_mobile,commenttaire_tpe_routine,image_tpe_routine,nom_agent,prenom_agent FROM routine INNER JOIN agent ON routine.commercial_routine_id = agent.id JOIN tpe_routine ON tpe_routine.routine_id = routine.id ORDER BY date_routine DESC`);
 
                 if (rows.length > 0) {
                     rows.map((row)=>{
-                        const formattedDate = moment(row.date_routine).format('DD/MM/YYYY'); 
+                        const formattedDate = moment(row.date_routine).format('DD/MM/YYYY HH:mm:ss'); 
                         row.date_routine = formattedDate
 
                         const fullName = `${row.nom_agent} ${row.prenom_agent}`
@@ -778,7 +777,58 @@ SELECT * FROM routine INNER JOIN agent ON routine.commercial_routine_id = agent.
     }
 };
 
+const getOneRoutine = async (req, res) => {
+    console.log("Voici la variable reçue : " + req.body.agentTypeid);
+    const typeAgentId = req.body.agentTypeid;
+    const idRoutine = req.body.idRoutine
 
+    if (!typeAgentId) {
+        return res.status(400).json({ message: "Veuillez fournir votre identité" });
+    }
+
+    if (typeAgentId !== 9) {
+        return res.status(400).json({ message: "Vous devez être le directeur commercial pour avoir accès à cette ressource" });
+    }
+
+    try {
+        // Réessayez la requête jusqu'à 3 fois en cas d'échec
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                const [rows] = await pool2.query(`
+SELECT routine.id,routine_id,commercial_routine_id,numero_routine,date_routine,point_marchand_routine,veille_concurentielle_routine,commentaire_routine,id_terminal_tpe_routine,etat_tpe_routine,etat_chargeur_tpe_routine,probleme_bancaire,description_problemebancaire,probleme_mobile,description_probleme_mobile,commenttaire_tpe_routine,image_tpe_routine,nom_agent,prenom_agent FROM routine INNER JOIN agent ON routine.commercial_routine_id = agent.id JOIN tpe_routine ON tpe_routine.routine_id = routine.id WHERE routine.id = ? ORDER BY date_routine DESC`,[idRoutine]);
+
+                if (rows.length > 0) {
+                    rows.map((row)=>{
+                        const formattedDate = moment(row.date_routine).format('DD/MM/YYYY HH:mm:ss'); 
+                        row.date_routine = formattedDate
+
+                        const fullName = `${row.nom_agent} ${row.prenom_agent}`
+                        row.fullName = fullName
+                        row.nom_agent = undefined
+                        row.prenom_agent = undefined
+                    })
+                    return res.status(200).json(rows);
+                } else {
+                    return res.status(404).json({ message: "Aucune donnée trouvée" });
+                }
+            } catch (error) {
+                if (error.code === 'ECONNRESET') {
+                    console.warn('Connexion réinitialisée, tentative de reconnexion...');
+                    retries--;
+                    if (retries === 0) {
+                        throw new Error('Impossible de récupérer les données après plusieurs tentatives');
+                    }
+                } else {
+                    throw error;
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération des données:", error);
+        return res.status(500).json({ message: "Erreur serveur" });
+    }
+};
 
 // changed
 const getRoutineInfosForDC = async (req, res, sendRoutineUpdates) => {
@@ -888,7 +938,6 @@ const getRoutineInfosForDC = async (req, res, sendRoutineUpdates) => {
     }
 };
 
-
 // Changed
 const getRoutineInfosForDCByDateRange = async (req, res, sendRoutineUpdates) => {
     const { dateDebut, dateFin } = req.body;
@@ -909,7 +958,7 @@ const getRoutineInfosForDCByDateRange = async (req, res, sendRoutineUpdates) => 
         const agents = await prisma.agent.findMany({
             where: {
                 type_agent_id: {
-                    notIn: [9, 8],
+                    notIn: [9, 8], // Exclure les agents ayant un type_agent_id 8 ou 9
                 },
             },
             include: { users: true },
@@ -971,19 +1020,29 @@ const getRoutineInfosForDCByDateRange = async (req, res, sendRoutineUpdates) => 
         // Mettre à jour les statistiques pour les routings
         routings.forEach((routing) => {
             const agentId = routing.agent.id;
-            groupedByAgent[agentId].routingsCount++;
-            const points = JSON.parse(routing.pm_routing); // Extraction des points marchands pour le routing
-            groupedByAgent[agentId].totalPointsMarchands += points.length; // Total des points marchands
+            if (groupedByAgent[agentId]) {
+                groupedByAgent[agentId].routingsCount++;
+                const points = JSON.parse(routing.pm_routing); // Extraction des points marchands pour le routing
+                groupedByAgent[agentId].totalPointsMarchands += points.length; // Total des points marchands
+            } else {
+                console.warn(`L'agent avec ID ${agentId} pour le routing ${routing.id} n'a pas été trouvé.`);
+            }
         });
 
         // Mettre à jour les statistiques pour les routines
         routines.forEach((routine) => {
             const agentId = routine.agent.id;
-            const isInRoutingPoints = pointsMarchandsDesRoutings.includes(routine.point_marchand_routine);
-            if (isInRoutingPoints) {
-                groupedByAgent[agentId].routinesCount++;
+
+            // Vérifier si l'agent est bien présent dans groupedByAgent
+            if (groupedByAgent[agentId]) {
+                const isInRoutingPoints = pointsMarchandsDesRoutings.includes(routine.point_marchand_routine);
+                if (isInRoutingPoints) {
+                    groupedByAgent[agentId].routinesCount++;
+                } else {
+                    groupedByAgent[agentId].routineEffectués++;
+                }
             } else {
-                groupedByAgent[agentId].routineEffectués++;
+                console.warn(`L'agent avec ID ${agentId} pour la routine ${routine.id} n'a pas été trouvé.`);
             }
         });
 
@@ -1007,7 +1066,6 @@ const getRoutineInfosForDCByDateRange = async (req, res, sendRoutineUpdates) => 
         }
     }
 };
-
 
 // Changed
 const getRoutineInfosForDcByCommercialByDateRange = async (req, res, sendRoutineUpdates) => {
@@ -1150,6 +1208,7 @@ const getRoutineInfosForDcByCommercialByDateRange = async (req, res, sendRoutine
                 groupedByAgent[agentId].listeInterventios[interventionIndex].count++;
             } else {
                 groupedByAgent[agentId].listeInterventios.push({
+                    idRoutine : routine.id,
                     nom_Pm: routine.point_marchand_routine,
                     date: moment(routine.date_routine).format('YYYY-MM-DD HH:mm:ss') // Utilisation de moment pour formater la date
                 });
@@ -1183,7 +1242,6 @@ const getRoutineInfosForDcByCommercialByDateRange = async (req, res, sendRoutine
         }
     }
 };
-
 
 //changed
 // const getRoutineInfosForDcByCommercial = async (req, res, sendRoutineUpdates) => {
@@ -1517,7 +1575,6 @@ const getRoutineInfosForDcByCommercial = async (req, res, sendRoutineUpdates) =>
     }
 };
 
-
 //changed
 const getRoutineInfos = async (req, res, sendRoutineUpdates) => {
     try {
@@ -1757,13 +1814,31 @@ const getRoutineInfosByDateRange = async (req, res, sendRoutineUpdates) => {
     }
 };
 
-
-
-
-
-
-
-
-module.exports = { makeRoutine , getRoutine, getRoutineByCommercial, getSnBypointMarchand , generateAuthCode , validateAuthCode , createRouting ,getRoutingByCommercial, importBase64File, getAllRoutingsByBdm, getMyAgents, getPms, getAllRoutinesByBdm, getAllMerchants, getProfile,updateMerchant,getRoutineInfos,getRoutineInfosByDateRange,allRoutines,allRoutings,getRoutineInfosForDC,getRoutineInfosForDcByCommercial,getRoutineInfosForDcByCommercialByDateRange,getRoutineInfosForDCByDateRange};
+module.exports = { makeRoutine 
+    ,generateAuthCode 
+    ,getRoutine
+    ,getRoutineByCommercial
+    ,getSnBypointMarchand 
+    ,validateAuthCode 
+    ,createRouting 
+    ,getRoutingByCommercial
+    ,importBase64File
+    ,getAllRoutingsByBdm
+    ,getMyAgents
+    ,getPms
+    ,getAllRoutinesByBdm
+    ,getAllMerchants
+    ,getProfile
+    ,updateMerchant
+    ,getRoutineInfos
+    ,getRoutineInfosByDateRange
+    ,allRoutines
+    ,allRoutings
+    ,getRoutineInfosForDC
+    ,getRoutineInfosForDcByCommercial
+    ,getRoutineInfosForDcByCommercialByDateRange
+    ,getRoutineInfosForDCByDateRange
+    ,getOneRoutine
+};
 
 

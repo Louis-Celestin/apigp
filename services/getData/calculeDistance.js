@@ -1,4 +1,4 @@
-function calculateDistance(lat1, lon1, lat2, lon2) {
+async function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3; // Rayon de la Terre en mètres
     const φ1 = lat1 * Math.PI / 180; // Conversion des degrés en radians
     const φ2 = lat2 * Math.PI / 180;

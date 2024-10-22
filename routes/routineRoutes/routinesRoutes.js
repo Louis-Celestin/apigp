@@ -22,6 +22,7 @@ router.post("/updateMerchant", [], controllers.updateMerchant);
 router.post("/profile", [], controllers.getProfile);
 router.post("/AllRoutings", [], controllers.allRoutings);
 router.post("/AllRoutines", [], controllers.allRoutines);
+router.post("/getOneRoutine", [], controllers.getOneRoutine);
 
 // Maintenant on modifie pour les WebSockets
 module.exports = (sendRoutineUpdates) => {
